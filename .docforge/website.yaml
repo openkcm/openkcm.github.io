@@ -1,7 +1,4 @@
 structure:
-- dir: blog
-  structure:
-  - fileTree: /website/blog
 - dir: community
   structure:
   - fileTree: /website/community
