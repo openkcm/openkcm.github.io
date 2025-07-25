@@ -5,14 +5,13 @@ It covers the prerequisites, local setup, and how to create and manage resources
 and networking.
 
 Before you are using OpenKCM SaaS, please make yourself familiar with the core concepts of OpenKCM as described in the
-[architecture overview section](/saas/architecture/).
+[architecture overview section](./architecture/).
 
 ## Local Setup
 
 The fastest way to get started with OpenKCM SaaS is to run it locally inside a `kind` cluster. Therefore, you can use
-[`openkcm-in-a-box`](https://github.com/openkcm/openkcm-in-a-box) which is a project tailored to run OpenKCM SaaS locally. 
+[`openkcm.github.io`](https://github.com/openkcm/openkcm.github.io) which is a project tailored to run OpenKCM SaaS locally. 
 
-![openkcm-in-a-box](/openkcm-in-a-box.png)
 
 ### Prerequisites
 
@@ -23,10 +22,10 @@ The fastest way to get started with OpenKCM SaaS is to run it locally inside a `
 
 ### Installation
 
-To do that clone the `OpenKCM-in-a-box` repository and run the provided script:
+To do that clone the `openkcm.github.io` repository and run the provided script:
 
 ```bash
-git clone github.com/openkcm/OpenKCM-in-a-box.git
+git clone github.com/openkcm/openkcm.github.io.git
 ```
 
 To start the OpenKCM stack you simply run:
@@ -35,16 +34,16 @@ To start the OpenKCM stack you simply run:
 make up
 ```
 
-Inside the `OpenKCM-in-a-box` directory. This will create a `kind` cluster and deploy all necessary parts to run 
+Inside the `openkcm.github.io` directory. This will create a `kind` cluster and deploy all necessary parts to run 
 OpenKCM SaaS.
 
-For Linux users, everything should work out of the box. Please consult the project [README](https://github.com/openkcm/OpenKCM-in-a-box/blob/main/README.md) 
+For Linux users, everything should work out of the box. Please consult the project [README](https://github.com/openkcm/openkcm.github.io/blob/main/README.md) 
 for more details on how to run the stack on macOS or Windows.
 
 ### Usage
 
-Once all OpenKCM components are up and running, you can start using the SaaS layer. `OpenKCM-in-a-box` provides a 
-conclusive example on how to create a `Machine` and all necessary resources to run a virtual machine [here](https://github.com/openkcm/OpenKCM-in-a-box/blob/main/examples/machine/machine.yaml).
+Once all OpenKCM components are up and running, you can start using the SaaS layer. `openkcm.github.io` provides a 
+conclusive example on how to create a `Machine` and all necessary resources to run a virtual machine [here](https://github.com/openkcm/openkcm.github.io/blob/main/examples/machine/machine.yaml).
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/examples/machine/machine.yaml
