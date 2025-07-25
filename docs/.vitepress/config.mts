@@ -82,37 +82,14 @@ export default withMermaid({
             {text: 'Overview', link: '/saas/architecture/'},
           ],
         },
-        {
-          text: "Providers",
-          collapsed: false,
-          items: [
-            {text: 'Overview', link: '/saas/architecture/providers/'},
-            {text: 'Brokers', link: '/saas/architecture/providers/brokers'},
-            {text: 'libvirt-provider', link: '/saas/architecture/providers/libvirt-provider'},
-            {text: 'ceph-provider', link: '/saas/architecture/providers/ceph-provider'},
-          ],
-        },
-        {
-          text: "Kubernetes Integration",
-          collapsed: false,
-          items: [
-            {text: 'Overview', link: '/saas/kubernetes/'},
-            {text: 'Cloud Controller Manager', link: '/saas/kubernetes/cloud-controller-manager'},
-            {text: 'CSI Driver', link: '/saas/kubernetes/csi-driver'},
-            {text: 'Gardener Integration', link: '/saas/kubernetes/gardener'},
-          ],
-        },
+
         {
           text: "API References",
           collapsed: true,
           items: [
             {text: 'Overview', link: '/saas/api-references/'},
-            {text: 'Core', link: '/saas/api-references/core'},
-            {text: 'Compute', link: '/saas/api-references/compute'},
-            {text: 'Storage', link: '/saas/api-references/storage'},
-            {text: 'Networking', link: '/saas/api-references/networking'},
-            {text: 'IPAM', link: '/saas/api-references/ipam'},
-            {text: 'Common', link: '/saas/api-references/common'},
+            {text: 'CMK', link: '/saas/api-references/cmk'},
+            {text: 'Crypto Layer', link: '/saas/api-references/crypto_layer'},
           ],
         },
       ],
