@@ -111,40 +111,6 @@ export default withMermaid({
           ],
         },
       ],
-    '/baremetal/': [
-      {
-        text: 'Overview', link: '/baremetal/',
-      },
-      {
-        text: "Architecture",
-        collapsed: false,
-        items: [
-          { text: 'Overview', link: '/baremetal/architecture' },
-          { text: 'Discovery', link: '/baremetal/architecture/discovery' },
-          { text: 'Provisioning', link: '/baremetal/architecture/provisioning' },
-        ],
-      },
-      {
-        text: "Kubernetes Integration",
-        collapsed: false,
-        items: [
-          { text: 'Overview', link: '/baremetal/kubernetes/' },
-          { text: 'Cloud Controller Manager', link: '/baremetal/kubernetes/cloud-controller-manager' },
-          { text: 'Metal Loadbalancer Controller', link: '/baremetal/kubernetes/metal-loadbalancer-controller' },
-          { text: 'Cluster API Provider', link: '/baremetal/kubernetes/capi' },
-          { text: 'Gardener Integration', link: '/baremetal/kubernetes/gardener' },
-        ],
-      },
-      {
-        text: "API References",
-        collapsed: true,
-        items: [
-          { text: 'Overview', link: '/baremetal/api-references/' },
-          { text: 'metal-operator', link: '/baremetal/api-references/metal-operator' },
-          { text: 'boot-operator', link: '/baremetal/api-references/boot-operator' },
-        ],
-      },
-    ]},
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/openkcm/' }
