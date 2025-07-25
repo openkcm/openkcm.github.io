@@ -1,0 +1,19 @@
+{
+  "/": ["Developers", "Operators", "Users"],
+  "/docs/": ["Developers", "Operators", "Users"],
+  "/docs/dashboard/": ["Operators", "Users", "Developers"],
+  "/docs/dashboard/access-restrictions/": ["Operators"],
+  "/docs/dashboard/architecture/": ["Developers"],
+  "/docs/dashboard/automated-resource-management/": ["Users"],
+  "/docs/dashboard/connect-kubectl/": ["Users"],
+  "/docs/dashboard/custom-fields/": ["Users"],
+  "/docs/dashboard/customization/": ["Operators"],
+  "/docs/dashboard/local-setup/": ["Developers"],
+  "/docs/dashboard/process/": ["Developers"],
+  "/docs/dashboard/project-operations/": ["Users"],
+  "/docs/dashboard/terminal-shortcuts/": ["Users"],
+  "/docs/dashboard/testing/": ["Developers"],
+  "/docs/dashboard/using-terminal/": ["Users"],
+  "/docs/dashboard/webterminals/": ["Operators"],
+  "/docs/dashboard/working-with-projects/": ["Users"]
+}
