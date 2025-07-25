@@ -16,9 +16,6 @@ hero:
     - theme: alt
       text: Infrastructure as a Service
       link: /iaas/getting-started
-    - theme: alt
-      text: Bare Metal Automation
-      link: /baremetal/
 
 features:
   - title: 🔍 Automatic Discovery & Provisioning

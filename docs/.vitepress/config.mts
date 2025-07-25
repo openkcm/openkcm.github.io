@@ -6,7 +6,7 @@ export default withMermaid({
   title: "OpenKCM",
   description: "Welcome to OpenKCM Documentation",
   base: '/',
-  head: [['link', { rel: 'icon', href: 'https://raw.githubusercontent.com/openkcm/OpenKCM/refs/heads/main/docs/assets/logo_borderless.svg' }]],
+  head: [['link', { rel: 'icon', href: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.png' }]],
   vite: {
     resolve: {
       alias: [
@@ -37,7 +37,7 @@ export default withMermaid({
     },
 
     logo: {
-      src: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo_borderless.svg',
+      src: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.png',
       width: 24,
       height: 24
     },

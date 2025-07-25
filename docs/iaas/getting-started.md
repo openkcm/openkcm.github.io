@@ -47,7 +47,7 @@ Once all OpenKCM components are up and running, you can start using the IaaS lay
 conclusive example on how to create a `Machine` and all necessary resources to run a virtual machine [here](https://github.com/openkcm/OpenKCM-in-a-box/blob/main/examples/machine/machine.yaml).
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/openkcm/OpenKCM-in-a-box/refs/heads/main/examples/machine/machine.yaml
+kubectl apply -f https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/examples/machine/machine.yaml
 ```
 
 More examples can be found in the [Usage Guides](/iaas/usage-guides/) section, which provides detailed instructions on 
