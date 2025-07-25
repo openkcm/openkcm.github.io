@@ -20,7 +20,7 @@ The project asks its users to participate in the project and community as much a
 
 ### Contributors
 
-Contributors are community members who contribute in concrete ways to the project. Anyone can become a contributor, and contributions can take many forms, as detailed in a [separate document](https://github.com/openkcm/documentation/blob/master/website/documentation/contribute/_index.md).
+Contributors are community members who contribute in concrete ways to the project. Anyone can become a contributor, and contributions can take many forms, as detailed in a [separate document](https://github.com/openkcm/documentation/blob/main/website/documentation/contribute/_index.md).
 There is no expectation of commitment to the project, no specific skill requirements and no selection process.
 
 ### Team Members

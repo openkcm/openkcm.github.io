@@ -169,7 +169,7 @@ function getThemeConfig() {
     editLink: {
       pattern: ({filePath, frontmatter}) => {
         const fileName = `${frontmatter?.path_base_for_github_subdir?.to ?? filePath.split("/").pop()}`
-        const githubLink = `${frontmatter['github_repo']}/tree/master/${frontmatter['github_subdir']}/${fileName}`
+        const githubLink = `${frontmatter['github_repo']}/tree/main/${frontmatter['github_subdir']}/${fileName}`
         return githubLink
       },
       text: 'Edit this page on GitHub'
@@ -268,10 +268,10 @@ function getHeadConfig(){
       'meta',
       {
         property: 'og:image',
-        content: 'https://raw.githubusercontent.com/openkcm/documentation/refs/heads/master/website/public/og-gardener.png'
+        content: 'https://raw.githubusercontent.com/openkcm/documentation/refs/heads/main/website/public/og-gardener.png'
       }
     ],
-    ['meta', {property: 'og:url', content: 'https://openkcm.cloud/'}],
+    ['meta', {property: 'og:url', content: 'https://openkcm.github.io/'}],
     //todo add analytics
     //[
     //  'script',

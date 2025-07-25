@@ -1,4 +1,4 @@
-manifest: https://github.com/openkcm/openkcm.github.io/blob/master/.docforge/hugo.yaml
+manifest: https://github.com/openkcm/openkcm.github.io/blob/main/.docforge/hugo.yaml
 destination: hugo
 hugo: true
 hugo-structural-dirs:
