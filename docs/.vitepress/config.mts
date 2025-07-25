@@ -6,7 +6,10 @@ export default withMermaid({
   title: "OpenKCM",
   description: "Welcome to OpenKCM Documentation",
   base: '/',
-  head: [['link', { rel: 'icon', href: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.png' }]],
+  head: [['link', {
+    rel: 'icon',
+    href: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.png'
+  }]],
   vite: {
     resolve: {
       alias: [
@@ -24,10 +27,12 @@ export default withMermaid({
     nav: [
       {text: 'Home', link: '/'},
       {text: 'Overview', link: '/overview'},
-      {text: 'Documentation',
-      items: [
-        {text: 'Software as a Service', link: '/saas/getting-started'},
-      ]},
+      {
+        text: 'Documentation',
+        items: [
+          {text: 'Software as a Service', link: '/saas/getting-started'},
+        ]
+      },
     ],
 
     editLink: {
@@ -48,72 +53,73 @@ export default withMermaid({
     sidebar: {
       '/overview/': [
         {
-            text: 'Overview',
-            items: [
-            { text: 'Index', link: '/overview/' },
-            { text: 'Design Principles', link: '/overview/principles' },
-            ]
+          text: 'Overview',
+          items: [
+            {text: 'Index', link: '/overview/'},
+            {text: 'Design Principles', link: '/overview/principles'},
+          ]
         }
       ],
       '/saas/': [
         {
-            text: 'Software as a Service',
-            collapsed: false,
-            items: [
-                { text: 'Getting Started', link: '/saas/getting-started' },
-            ],
+          text: 'Software as a Service',
+          collapsed: false,
+          items: [
+            {text: 'Getting Started', link: '/saas/getting-started'},
+          ],
         },
         {
           text: 'Usage Guides',
           collapsed: true,
           items: [
-              { text: 'Overview', link: '/saas/usage-guides/' },
+            {text: 'Overview', link: '/saas/usage-guides/'},
           ],
         },
         {
-            text: "Architecture",
-            collapsed: false,
-            items: [
-                { text: 'Overview', link: '/saas/architecture/' },
-            ],
+          text: "Architecture",
+          collapsed: false,
+          items: [
+            {text: 'Overview', link: '/saas/architecture/'},
+          ],
         },
         {
           text: "Providers",
           collapsed: false,
           items: [
-            { text: 'Overview', link: '/saas/architecture/providers/' },
-            { text: 'Brokers', link: '/saas/architecture/providers/brokers' },
-            { text: 'libvirt-provider', link: '/saas/architecture/providers/libvirt-provider' },
-            { text: 'ceph-provider', link: '/saas/architecture/providers/ceph-provider' },
+            {text: 'Overview', link: '/saas/architecture/providers/'},
+            {text: 'Brokers', link: '/saas/architecture/providers/brokers'},
+            {text: 'libvirt-provider', link: '/saas/architecture/providers/libvirt-provider'},
+            {text: 'ceph-provider', link: '/saas/architecture/providers/ceph-provider'},
           ],
         },
         {
           text: "Kubernetes Integration",
           collapsed: false,
           items: [
-            { text: 'Overview', link: '/saas/kubernetes/' },
-            { text: 'Cloud Controller Manager', link: '/saas/kubernetes/cloud-controller-manager' },
-            { text: 'CSI Driver', link: '/saas/kubernetes/csi-driver' },
-            { text: 'Gardener Integration', link: '/saas/kubernetes/gardener' },
+            {text: 'Overview', link: '/saas/kubernetes/'},
+            {text: 'Cloud Controller Manager', link: '/saas/kubernetes/cloud-controller-manager'},
+            {text: 'CSI Driver', link: '/saas/kubernetes/csi-driver'},
+            {text: 'Gardener Integration', link: '/saas/kubernetes/gardener'},
           ],
         },
         {
           text: "API References",
           collapsed: true,
           items: [
-            { text: 'Overview', link: '/saas/api-references/' },
-            { text: 'Core', link: '/saas/api-references/core' },
-            { text: 'Compute', link: '/saas/api-references/compute' },
-            { text: 'Storage', link: '/saas/api-references/storage' },
-            { text: 'Networking', link: '/saas/api-references/networking' },
-            { text: 'IPAM', link: '/saas/api-references/ipam' },
-            { text: 'Common', link: '/saas/api-references/common' },
+            {text: 'Overview', link: '/saas/api-references/'},
+            {text: 'Core', link: '/saas/api-references/core'},
+            {text: 'Compute', link: '/saas/api-references/compute'},
+            {text: 'Storage', link: '/saas/api-references/storage'},
+            {text: 'Networking', link: '/saas/api-references/networking'},
+            {text: 'IPAM', link: '/saas/api-references/ipam'},
+            {text: 'Common', link: '/saas/api-references/common'},
           ],
         },
       ],
 
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/openkcm/' }
-    ],
+      socialLinks: [
+        {icon: 'github', link: 'https://github.com/openkcm/'}
+      ],
+    }
   }
 })
