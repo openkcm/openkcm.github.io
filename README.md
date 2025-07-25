@@ -2,7 +2,7 @@
 
 ## 🚀 Quick Start
 
-Ready to jump in? Follow these steps to get the Gardener documentation running locally:
+Ready to jump in? Follow these steps to get the OpenKCM documentation running locally:
 
 1. **Prerequisites**
     - Docker installed and running
@@ -25,7 +25,7 @@ To get the correct Github token -> [Getting the correct GitHub token](#getting-t
 
 ## 📚 Understanding the Documentation Structure
 
-The Gardener documentation uses a **distributed documentation model** where content is gathered from multiple repositories and organized into a single website using docforge.
+The OpenKCM documentation uses a **distributed documentation model** where content is gathered from multiple repositories and organized into a single website using docforge.
 
 ### Key Locations
 

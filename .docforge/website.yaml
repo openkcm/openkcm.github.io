@@ -1,0 +1,16 @@
+structure:
+- dir: blog
+  structure:
+  - fileTree: /website/blog
+- dir: community
+  structure:
+  - fileTree: /website/community
+    excludeFiles:
+    - steering/assets
+
+
+- dir: public
+  structure:
+    - fileTree: ../website/public
+
+- file: ../website/index.md
