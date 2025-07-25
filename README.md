@@ -1,89 +1,32 @@
-# 🌱 OpenKCM Documentation
+# OpenKCM Landing Page and Central Documentation
 
-## 🚀 Quick Start
+[![REUSE status](https://api.reuse.software/badge/github.com/openkcm/openkcm.github.io)](https://api.reuse.software/info/github.com/openkcm/openkcm.github.io)
+[![GitHub License](https://img.shields.io/static/v1?label=License&message=Apache-2.0&color=blue)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
 
-Ready to jump in? Follow these steps to get the OpenKCM documentation running locally:
+Welcome to the OpenKCM Documentation. This is the central source for all components of the OpenKCM.
+This repository holds the multi-repository configuration for the [OpenKCM-based](https://github.com/openkcm) documentation.
+Here you’ll find detailed guides, architecture overviews, usage instructions, and developer documentation.
 
-1. **Prerequisites**
-    - Docker installed and running
-    - GitHub token (for API rate limits)
+## Running the Documentation Locally
 
-2. **Set up environment variables**
-   ```bash
-   export DOCFORGE_CONFIG=.docforge/config.yaml
-   export GITHUB_OAUTH_TOKEN=your_github_token 
-   ```
+To build and run the documentation container locally, run:
 
-To get the correct Github token -> [Getting the correct GitHub token](#getting-the-correct-github-token)
-
-1. **Start the development server**
-   ```bash
-   make docs-dev
-   ```
-
-2. **Visit [http://localhost:5173](http://localhost:5173) in your browser** 🎉
-
-## 📚 Understanding the Documentation Structure
-
-The OpenKCM documentation uses a **distributed documentation model** where content is gathered from multiple repositories and organized into a single website using docforge.
-
-### Key Locations
-
-- **Local content**: `website/` directory
-    - `website/documentation/` - Core documentation files
-    - `website/blog/` - Blog posts
-    - `website/community/` - Community-related content
-
-- **Remote content**:
-    - Content from other repositories is pulled in during the build process
-    - The structure is defined in `.docforge/*.yaml` manifest files
-
-### Manifest Files Explained
-
-The `.docforge/` folder contains YAML files that define the structure of the documentation site:
-
-- **`website.yaml`**: The main entry point that defines the top-level structure
-- **`documentation/documentation.yaml`**: Defines the structure of the docs section
-- Other YAML files for specific sections (extensions, adopters, etc.)
-
-Here's a simplified view of how it works:
 ```
-.docforge/website.yaml            # Main structure
-  ↳ .docforge/documentation/*.yaml # Various section structures
-    ↳ Content from local files and remote repositories
+make startdocs
 ```
 
-## ✏️ Contributing
+Then open your browser and navigate to http://localhost:5173/ to view the documentation site.
 
-### Local Content
+## Cleaning Up
 
-1. To modify local content, simply edit files in the `website/` directory
-2. Content changes are reflected immediately when using `make docs-dev`
+To remove unused Docker containers for this project, run:
+```
+make cleandocs
+```
 
-### Blog Posts
+## Licensing
 
-1. Create new blog posts in `website/blog/YEAR/MONTH/your-post.md`
-2. Include front matter at the top of your file:
-   ```yaml
-   ---
-   title: Your Awesome Blog Post
-   description: "A brief description of your post"
-   date: 2025-06-24
-   authors:
-   - name: Your Name
-     email: your.email@example.com
-   ---
-   ```
-
-## 🔧 Available Commands
-
-### Documentation Development
-
-- `make docs-dev` - Start the development server with live reloading (port 5173)
-
-### Docforge (Content Gathering)
-
-- `make docforge-download` - Get the docforge binary for your OS
-- `make docforge` - Run docforge with default config
-- `make docforge-run ARGS="..."` - Run docforge with custom parameters
-
+Copyright 2025 SAP SE or an SAP affiliate company and OpenKCM contributors. Please see our [LICENSE](LICENSE) for
+copyright and license information. Detailed information including third-party components and their licensing/copyright
+information is available [via the REUSE tool](https://api.reuse.software/info/github.com/openkcmF/openkcm.github.io).

@@ -6,7 +6,7 @@ Common terminology used in this governance document are listed below:
 * Team members: Any members of the Github organization.
 * Maintainers: Maintainers lead an individual project or parts thereof (CODEOWNERS).
 * Projects: A single repository in the OpenKCM GitHub organization is referred to as a project.
-* The OpenKCM project: The sum of all activities performed under this governance, concerning one or more repositories or the community.
+* The OpenKCM: The sum of all activities performed under this governance, concerning one or more repositories or the community.
 
 ## Projects
 Each project must have a CODEOWNERS file with at least one maintainer. Releases should be announced on the mailing list. Any new projects should be first proposed on the developers mailing list following the voting procedures listed below. When a project is no longer relevant, it should be moved to the openkcm-attic GitHub organization.
@@ -20,12 +20,12 @@ The project asks its users to participate in the project and community as much a
 
 ### Contributors
 
-Contributors are community members who contribute in concrete ways to the project. Anyone can become a contributor, and contributions can take many forms, as detailed in a [separate document](https://github.com/openkcm/documentation/blob/main/website/documentation/contribute/_index.md).
+Contributors are community members who contribute in concrete ways to the project. Anyone can become a contributor, and contributions can take many forms, as detailed in a [separate document](https://github.com/openkcm/openkcm.github.io/blob/main/website/documentation/contribute/_index.md).
 There is no expectation of commitment to the project, no specific skill requirements and no selection process.
 
 ### Team Members
 
-Team member status may be given to those who have made ongoing contributions to the OpenKCM project for at least 3 months. This is usually in the form of code improvements and/or notable work on documentation, but organizing events or user support could also be taken into account.
+Team member status may be given to those who have made ongoing contributions to the OpenKCM for at least 3 months. This is usually in the form of code improvements and/or notable work on documentation, but organizing events or user support could also be taken into account.
 
 New members may be proposed by any existing member by email to the [OpenKCM mailing list](https://groups.google.com/forum/?fromgroups#!forum/openkcm). The vote will be decided by majority in which each existing team member has one vote. Team members are added to the GitHub organization as member. They should respect the maintainers of each project. Team members may retire at any time by emailing the team. Team members can be removed by majority vote on the mailing list. For this vote, the member in question is not eligible to vote and does not count towards the quorum.
 
@@ -41,7 +41,7 @@ Maintainers are responsible for one or more projects, and are expected to
 * and generally perform maintainance tasks for these projects.
 
 Overall project goals and directions are discussed and agreed on by the group of all maintainers of all
-the OpenKCM projects.
+the OpenKCMs.
 
 Maintainers are are added to the openkcm Github organization and are listed in the [CODEOWNERS](https://help.github.com/articles/about-codeowners/) file of the respective repository.
 

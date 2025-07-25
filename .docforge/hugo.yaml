@@ -1,4 +1,0 @@
-structure:
-- dir: content
-  structure:
-  - manifest: ./website.yaml
