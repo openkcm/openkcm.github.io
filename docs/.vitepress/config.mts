@@ -56,7 +56,9 @@ export default withMermaid({
           text: 'Overview',
           items: [
             {text: 'Index', link: '/overview/'},
-            {text: 'Design Principles', link: '/overview/principles'},
+            {text: 'Core Concept', link: '/overview/core-concept'},
+            {text: 'Customer Managed Key', link: '/overview/cmk'},
+            {text: 'Crypto Layer', link: '/overview/crypto'},
           ]
         }
       ],
@@ -89,7 +91,7 @@ export default withMermaid({
           items: [
             {text: 'Overview', link: '/saas/api-references/'},
             {text: 'CMK', link: '/saas/api-references/cmk'},
-            {text: 'Crypto Layer', link: '/saas/api-references/crypto_layer'},
+            {text: 'Crypto', link: '/saas/api-references/crypto'},
           ],
         },
       ],

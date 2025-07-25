@@ -66,7 +66,7 @@ process. We use [the standard DCO text of the Linux Foundation](https://develope
 
 ```shell
 git clone git@github.com:openkcm/openkcm.github.io.git
-cd docs
+cd openkcm.github.io
 ```
 
 * Create a branch from the `main` using 'git checkout' command. 
