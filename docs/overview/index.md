@@ -1,6 +1,6 @@
 # Overview
 
-OpenKCM bridges the gap between virtualized infrastructure and physical hardware management, offering a unified 
+OpenKCM bridges the gap between virtualized Software and physical hardware management, offering a unified 
 solution for developers, system administrators, and enterprises. Explore the two core layers below to see how OpenKCM
 can transform your workflows.
 
@@ -8,11 +8,11 @@ can transform your workflows.
 
 Here’s a visual representation of OpenKCM’s two layers:
 
-**Infrastructure as a Service (IaaS)**
+**Software as a Service (SaaS)**
 
 ```mermaid
 graph TD
-    A["Infrastructure as a Service (IaaS)"]
+    A["Software as a Service (SaaS)"]
     
     A --> D[Compute]
     A --> E[Networking]
@@ -40,9 +40,9 @@ graph TD
 
 ---
 
-## Infrastructure as a Service (IaaS)
+## Software as a Service (SaaS)
 
-The IaaS layer provides a flexible, user-friendly environment to create and manage **Compute**, **Networking**, and 
+The SaaS layer provides a flexible, user-friendly environment to create and manage **Compute**, **Networking**, and 
 **Storage** resources. With OpenKCM, you can:
 
 - **Compute**: Spin up virtual machines or containers tailored to your workload needs.
@@ -52,9 +52,9 @@ The IaaS layer provides a flexible, user-friendly environment to create and mana
 Designed for simplicity and power, this layer abstracts the complexity of resource management, giving you cloud-like 
 control at your fingertips.
 
-**[Get Started with IaaS](/iaas/getting-started)** 
+**[Get Started with SaaS](/saas/getting-started)** 
 
-**[API References](/iaas/api-references/)**
+**[API References](/saas/api-references/)**
 
 ---
 

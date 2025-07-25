@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "OpenKCM"
   text: "Open Key Chain Manager"
-  tagline: "OpenKCM is an open-source platform designed to empower users with robust infrastructure management and bare metal automation"
+  tagline: "OpenKCM is an open-source platform designed to empower users with robust Software management and bare metal automation"
   image:
     src: https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.png
     alt: OpenKCM
@@ -14,20 +14,20 @@ hero:
       text: Overview
       link: /overview/
     - theme: alt
-      text: Infrastructure as a Service
-      link: /iaas/getting-started
+      text: Software as a Service
+      link: /saas/getting-started
 
 features:
   - title: 🔍 Automatic Discovery & Provisioning
     details: Detect and provision bare metal servers automatically using Kubernetes-native CRDs.
   - title: 🧰 Declarative Day-2 Operations
     details: Manage BIOS, firmware, and hardware inventory declaratively via Kubernetes.
-  - title: ☁️ Modular IaaS Building Blocks
+  - title: ☁️ Modular SaaS Building Blocks
     details: Pluggable compute, storage, and networking providers designed for hybrid and edge deployments.
   - title: 🔗 Native Kubernetes Integration
     details: Seamless integration with CSI, CCM, Cluster API, and Gardener.
   - title: 🧱 Composable, Reusable Components
     details: Reuse standalone modules like Metal Operator, Libvirt, or Ceph Providers across environments.
   - title: 👨‍💻 DevOps-Ready by Design
-    details: End-to-end infrastructure and lifecycle management powered by a declarative Kubernetes API.
+    details: End-to-end Software and lifecycle management powered by a declarative Kubernetes API.
 ---

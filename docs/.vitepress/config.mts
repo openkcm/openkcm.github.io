@@ -26,8 +26,7 @@ export default withMermaid({
       {text: 'Overview', link: '/overview'},
       {text: 'Documentation',
       items: [
-        {text: 'Infrastructure as a Service', link: '/iaas/getting-started'},
-        {text: 'Bare Metal Automation', link: '/baremetal/'},
+        {text: 'Software as a Service', link: '/saas/getting-started'},
       ]},
     ],
 
@@ -56,68 +55,59 @@ export default withMermaid({
             ]
         }
       ],
-      '/iaas/': [
+      '/saas/': [
         {
-            text: 'Infrastructure as a Service',
+            text: 'Software as a Service',
             collapsed: false,
             items: [
-                { text: 'Getting Started', link: '/iaas/getting-started' },
+                { text: 'Getting Started', link: '/saas/getting-started' },
             ],
         },
         {
           text: 'Usage Guides',
           collapsed: true,
           items: [
-              { text: 'Overview', link: '/iaas/usage-guides/' },
-              { text: 'Compute', link: '/iaas/usage-guides/compute'},
-              { text: 'Networking', link: '/iaas/usage-guides/networking' },
-              { text: 'Storage', link: '/iaas/usage-guides/storage' },
-              { text: 'IPAM', link: '/iaas/usage-guides/ipam' },
-              { text: 'Core', link: '/iaas/usage-guides/core' },
+              { text: 'Overview', link: '/saas/usage-guides/' },
           ],
         },
         {
             text: "Architecture",
             collapsed: false,
             items: [
-                { text: 'Overview', link: '/iaas/architecture/' },
-                { text: 'Scheduling and Orchestration', link: '/iaas/architecture/scheduling' },
-                { text: 'Runtime Interface', link: '/iaas/architecture/runtime-interface' },
-                { text: 'Networking', link: '/iaas/architecture/networking' },
-                { text: 'Operating System Images', link: '/iaas/architecture/os-images' },
+                { text: 'Overview', link: '/saas/architecture/' },
             ],
         },
         {
           text: "Providers",
           collapsed: false,
           items: [
-            { text: 'Overview', link: '/iaas/architecture/providers/' },
-            { text: 'Brokers', link: '/iaas/architecture/providers/brokers' },
-            { text: 'libvirt-provider', link: '/iaas/architecture/providers/libvirt-provider' },
-            { text: 'ceph-provider', link: '/iaas/architecture/providers/ceph-provider' },
+            { text: 'Overview', link: '/saas/architecture/providers/' },
+            { text: 'Brokers', link: '/saas/architecture/providers/brokers' },
+            { text: 'libvirt-provider', link: '/saas/architecture/providers/libvirt-provider' },
+            { text: 'ceph-provider', link: '/saas/architecture/providers/ceph-provider' },
           ],
         },
         {
           text: "Kubernetes Integration",
           collapsed: false,
           items: [
-            { text: 'Overview', link: '/iaas/kubernetes/' },
-            { text: 'Cloud Controller Manager', link: '/iaas/kubernetes/cloud-controller-manager' },
-            { text: 'CSI Driver', link: '/iaas/kubernetes/csi-driver' },
-            { text: 'Gardener Integration', link: '/iaas/kubernetes/gardener' },
+            { text: 'Overview', link: '/saas/kubernetes/' },
+            { text: 'Cloud Controller Manager', link: '/saas/kubernetes/cloud-controller-manager' },
+            { text: 'CSI Driver', link: '/saas/kubernetes/csi-driver' },
+            { text: 'Gardener Integration', link: '/saas/kubernetes/gardener' },
           ],
         },
         {
           text: "API References",
           collapsed: true,
           items: [
-            { text: 'Overview', link: '/iaas/api-references/' },
-            { text: 'Core', link: '/iaas/api-references/core' },
-            { text: 'Compute', link: '/iaas/api-references/compute' },
-            { text: 'Storage', link: '/iaas/api-references/storage' },
-            { text: 'Networking', link: '/iaas/api-references/networking' },
-            { text: 'IPAM', link: '/iaas/api-references/ipam' },
-            { text: 'Common', link: '/iaas/api-references/common' },
+            { text: 'Overview', link: '/saas/api-references/' },
+            { text: 'Core', link: '/saas/api-references/core' },
+            { text: 'Compute', link: '/saas/api-references/compute' },
+            { text: 'Storage', link: '/saas/api-references/storage' },
+            { text: 'Networking', link: '/saas/api-references/networking' },
+            { text: 'IPAM', link: '/saas/api-references/ipam' },
+            { text: 'Common', link: '/saas/api-references/common' },
           ],
         },
       ],
