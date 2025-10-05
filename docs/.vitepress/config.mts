@@ -8,7 +8,7 @@ export default withMermaid({
   base: '/',
   head: [['link', {
     rel: 'icon',
-    href: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.png'
+    href: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.svg'
   }]],
   vite: {
     resolve: {
@@ -41,7 +41,7 @@ export default withMermaid({
     },
 
     logo: {
-      src: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.png',
+      src: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.svg',
       width: 24,
       height: 24
     },
