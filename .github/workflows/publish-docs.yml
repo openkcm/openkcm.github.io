@@ -36,7 +36,7 @@ jobs:
       #     version: 9 # Not needed if you've set "packageManager" in package.json
       # - uses: oven-sh/setup-bun@v1 # Uncomment this if you're using Bun
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 24
           cache: npm # or pnpm / yarn
@@ -47,7 +47,7 @@ jobs:
       - name: Build with VitePress
         run: npm run docs:build # or pnpm docs:build / yarn docs:build / bun run docs:build
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           path: docs/.vitepress/dist
         if: github.event_name != 'pull_request' # Skip upload on PRs
