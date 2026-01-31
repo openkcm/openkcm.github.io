@@ -45,7 +45,7 @@ img[src='/search.png'] {
 .zoom-thumb {
     max-width: 100%;
     cursor: zoom-in;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .zoom-image figcaption {
@@ -64,24 +64,29 @@ img[src='/search.png'] {
     align-items: center;
     justify-content: center;
     z-index: 9999;
+    cursor: zoom-out;
+    pointer-events: auto;
 }
 
+/* Full-size image */
 .zoom-full {
     max-width: 95vw;
     max-height: 95vh;
     cursor: zoom-out;
+    border-radius: 6px;
 }
 
 /* Close button */
 .zoom-close {
-    position: absolute;
+    position: fixed;
     top: 16px;
     right: 20px;
-    z-index: 10000; /* 👈 critical */
+    z-index: 10000;  /* must be above overlay */
     font-size: 32px;
     line-height: 1;
     background: none;
     border: none;
     color: white;
     cursor: pointer;
+    pointer-events: auto;
 }

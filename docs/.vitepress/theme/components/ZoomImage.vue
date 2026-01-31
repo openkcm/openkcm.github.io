@@ -13,6 +13,7 @@ function close() {
   open.value = false
 }
 
+// ESC key closes
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') close()
 }
@@ -39,6 +40,7 @@ onBeforeUnmount(() => {
         @keydown.enter="open = true"
     />
 
+    <!-- Optional caption -->
     <figcaption v-if="caption">{{ caption }}</figcaption>
 
     <!-- Overlay -->
@@ -48,24 +50,24 @@ onBeforeUnmount(() => {
           class="zoom-overlay"
           role="dialog"
           aria-modal="true"
-          @click="close"
+          @mousedown="close"          <!-- close on mousedown to prevent click-through -->
       >
-        <!-- Close button -->
-        <button
-            class="zoom-close"
-            aria-label="Close image"
-            @click.stop="close"
-        >
-          ×
-        </button>
+      <!-- Close button -->
+      <button
+          class="zoom-close"
+          aria-label="Close image"
+          @mousedown.stop           <!-- stop mousedown so button works -->
+      >
+      ×
+      </button>
 
-        <!-- Full image -->
-        <img
-            :src="src"
-            :alt="alt"
-            class="zoom-full"
-            @click.stop
-        />
+      <!-- Full-size image -->
+      <img
+          :src="src"
+          :alt="alt"
+          class="zoom-full"
+          @mousedown.stop           <!-- prevent click-through on image -->
+      />
       </div>
     </teleport>
   </figure>
