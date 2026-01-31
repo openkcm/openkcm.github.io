@@ -1,6 +1,8 @@
 # Overview
 
-**OpenKCM** (Open Key Chain Manager) is a secure, scalable, and open-source Key Management Service (KMS) tailored to
+**OpenKCM** (Open Key Chain Manager) is a secure, scalable, 
+
+and open-source Key Management Service (KMS) tailored to
 meet the growing demands of data protection in modern cloud environments. It helps organizations manage
 cryptographic keys efficiently while ensuring compliance with stringent security and privacy standards.
 
@@ -19,6 +21,16 @@ OpenKCM provides a centralized solution to govern encryption keys, allowing fine
 | 🔁 Key Hierarchies            | Organize keys by technical service, provider, and region         |
 | 🗝️ BYOK (Bring Your Own Key) | Import your own encryption keys                                  |
 | 🔐 HYOK (Hold Your Own Key)   | Store and control master keys within your own infrastructure     |
+
+
+## 🧩 Strategic Capabilities
+
+| Capability | Description                                             | Business Value |
+| :--- |:--------------------------------------------------------| :--- |
+| **Recursive Unsealing** | Keys are derived in a strict chain (L1 → L2 → L3 → L4). | **Mathematical Isolation.** Data cannot be decrypted without the L1 Root being active. |
+| **Split-Execution** | **Gateways** generate keys; **Cores** wrap them.        | **Hyperscale Sovereignty.** Supports billions of ops/sec without exposing root keys to the edge. |
+| **Sovereign Kill-Switch** | Instant destruction of L2/L3 keys in memory.            | **Guaranteed Exit.** When a customer leaves, their data becomes cryptographically unreadable instantly. |
+| **Plug-and-Play Storage** | Gateways use pluggable vaults.                          | **Flexible Deployment.** Run anywhere—on-prem, cloud, or edge. |
 
 ## 🎯 Who Should Use OpenKCM?
 
