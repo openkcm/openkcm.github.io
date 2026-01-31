@@ -20,9 +20,9 @@ This hierarchy ensures that "Access to Data" (L4) is mathematically impossible w
 | **L3** | **Service Key** | **Service** | **OpenKCM Core** | The "Workhorse." Specific to a logical domain (e.g., "Payments," "Audit"). It stays locked inside the **Regional Core** and is used to wrap/unwrap millions of data keys. |
 | **L4** | **Data Key (DEK)** | **Record** | **Gateway / App** | The "Payload." Generated locally by the **Gateway** for high-speed encryption. It is stored alongside your data, wrapped (encrypted) by the L3. |
 
-## Ownership Models
+## Customer Managed Key: Ownership Models
 
-OpenKCM supports two distinct models for asserting sovereignty, depending on your regulatory requirements.
+OpenKCM CMK(Customer Managed Key) supports two distinct models for asserting sovereignty, depending on your regulatory requirements.
 
 ### BYOK (Bring Your Own Key) -> "Link Your Own Key"
 We redefine "Bring Your Own Key" to mean **"Link Your Own Key."** You do not upload key material to us; you simply authorize us to use it remotely.
@@ -38,7 +38,7 @@ For ultra-sensitive workloads (Banking, Defense, Healthcare), trusting a public 
 * **The Anchor:** OpenKCM must make a network call to your on-premise HSM to boot the tenant.
 * **The Guarantee:** Even if a subpoena or compromise affects the cloud provider, they physically cannot decrypt your data without network access to your private hardware.
 
-## The Split-Execution Model
+## Crypto:  The Split-Execution Model
 
 To achieve **Sovereignty at Scale**, OpenKCM splits the cryptographic workload into two physical planes.
 
