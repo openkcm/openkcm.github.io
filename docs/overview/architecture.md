@@ -10,7 +10,7 @@ OpenKCM resolves this by enforcing a strict **Separation of Duties**. We archite
 The diagram below illustrates how OpenKCM isolates governance from execution.
 
 <ZoomImage
-src="../images/high-level-architecture.png"
+src="/architecture/high-level-architecture.png"
 alt="High Level Architecture"
 />
 
@@ -38,7 +38,7 @@ To balance **Sovereignty** (Customer Control) with **Scale** (Cloud Speed), Open
 The diagram below details the L1-L4 dependency tree and the Ownership Models (BYOK/HYOK).
 
 <ZoomImage
-src="../images/key-chain-representation.png"
+src="/architecture/key-chain-representation.png"
 alt="Key Chain Representation"
 />
 
@@ -72,7 +72,7 @@ The diagram below visualizes the technical flow of "Wrapping" and "Unwrapping" a
 
 
 <ZoomImage
-src="../images/key-chain-flow.png"
+src="/architecture/key-chain-flow.png"
 alt="Key Chain Flow"
 />
 
