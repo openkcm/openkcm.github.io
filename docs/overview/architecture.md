@@ -9,18 +9,10 @@ OpenKCM resolves this by enforcing a strict **Separation of Duties**. We archite
 ### The High-Level Architecture
 The diagram below illustrates how OpenKCM isolates governance from execution.
 
-<div class="diagram-wrapper">
-  <input type="checkbox" id="hla-zoom" class="zoom-toggle" />
-
-<label for="hla-zoom" class="zoom-button">+</label>
-
-  <label for="hla-zoom" class="diagram-overlay">
-    <img
-      src="../images/high-level-architecture.png"
-      alt="High Level Architecture"
-    />
-  </label>
-</div>
+<ZoomImage
+src="../images/high-level-architecture.png"
+alt="High Level Architecture"
+/>
 
 **Strategic Components:**
 
@@ -45,18 +37,10 @@ To balance **Sovereignty** (Customer Control) with **Scale** (Cloud Speed), Open
 ### The Cryptographic Hierarchy
 The diagram below details the L1-L4 dependency tree and the Ownership Models (BYOK/HYOK).
 
-<div class="diagram-wrapper">
-  <input type="checkbox" id="hla-zoom" class="zoom-toggle" />
-
-<label for="hla-zoom" class="zoom-button">+</label>
-
-  <label for="hla-zoom" class="diagram-overlay">
-    <img
-      src="../images/key-chain-representation.png"
-      alt="Key Chain Representation"
-    />
-  </label>
-</div>
+<ZoomImage
+src="../images/key-chain-representation.png"
+alt="Key Chain Representation"
+/>
 
 **The Layers Explained:**
 
@@ -86,18 +70,11 @@ How do we ensure that a key is never exposed? The flow of trust relies on **Recu
 ### The Unsealing Flow
 The diagram below visualizes the technical flow of "Wrapping" and "Unwrapping" as data moves from the central store to the edge service.
 
-<div class="diagram-wrapper">
-  <input type="checkbox" id="hla-zoom" class="zoom-toggle" />
 
-<label for="hla-zoom" class="zoom-button">+</label>
-
-  <label for="hla-zoom" class="diagram-overlay">
-    <img
-      src="../images/key-chain-flow.png"
-      alt="Key Chain Flow"
-    />
-  </label>
-</div>
+<ZoomImage
+src="../images/key-chain-flow.png"
+alt="Key Chain Flow"
+/>
 
 **The Trust Workflow:**
 
