@@ -57,6 +57,7 @@ export default withMermaid({
           items: [
             {text: 'Index', link: '/overview/'},
             {text: 'Core Concept', link: '/overview/core-concept'},
+            {text: 'High Level Architecture', link: '/overview/architecture'},
             {text: 'Customer Managed Key', link: '/overview/cmk'},
             {text: 'Crypto Layer', link: '/overview/crypto'},
           ]
