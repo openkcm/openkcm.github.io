@@ -14,9 +14,7 @@ function close() {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
-    close()
-  }
+  if (e.key === 'Escape') close()
 }
 
 onMounted(() => {
@@ -30,7 +28,7 @@ onBeforeUnmount(() => {
 
 <template>
   <figure class="zoom-image">
-    <!-- Inline image -->
+    <!-- Thumbnail -->
     <img
         :src="src"
         :alt="alt"
@@ -43,27 +41,30 @@ onBeforeUnmount(() => {
 
     <figcaption v-if="caption">{{ caption }}</figcaption>
 
-    <!-- Zoom overlay -->
+    <!-- Overlay -->
     <teleport to="body">
       <div
           v-if="open"
           class="zoom-overlay"
           role="dialog"
           aria-modal="true"
-          @click.self="close"
+          @click="close"
       >
+        <!-- Close button -->
         <button
             class="zoom-close"
             aria-label="Close image"
-            @click="close"
+            @click.stop="close"
         >
           ×
         </button>
 
+        <!-- Full image -->
         <img
             :src="src"
             :alt="alt"
             class="zoom-full"
+            @click.stop
         />
       </div>
     </teleport>
