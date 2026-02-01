@@ -36,7 +36,7 @@ img[src='/search.png'] {
     aspect-ratio: 1 / 1;
 }
 
-
+/* Start ZoomImage styles */
 .zoom-image {
     display: inline-block;
     margin: 1rem 0;
@@ -64,11 +64,12 @@ img[src='/search.png'] {
     align-items: center;
     justify-content: center;
     z-index: 9999;
+    cursor: zoom-out;
 }
 
 .zoom-full {
-    max-width: 95vw;
-    max-height: 95vh;
+    max-width: calc(95vw - 24px);
+    max-height: calc(95vh - 24px);
     cursor: zoom-out;
 }
 
@@ -77,11 +78,31 @@ img[src='/search.png'] {
     position: absolute;
     top: 16px;
     right: 20px;
-    z-index: 10000; /* 👈 critical */
+    z-index: 10000;
     font-size: 32px;
     line-height: 1;
     background: none;
     border: none;
     color: white;
     cursor: pointer;
+    padding: 8px;
 }
+
+.zoom-thumb,
+.zoom-full {
+    background: var(--vp-c-bg-soft);
+    padding: 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+/* Dark mode */
+html.dark .zoom-thumb,
+html.dark .zoom-full {
+    background: color-mix(
+            in srgb,
+            var(--vp-c-bg-soft) 85%,
+            white 15%
+    );
+}
+/* End ZoomImage styles */
