@@ -66,7 +66,7 @@ onBeforeUnmount(() => {
             :src="src"
             :alt="alt"
             class="zoom-full"
-            @mousedown.stop
+            @mousedown.stop="close"
         />
       </div>
     </teleport>
