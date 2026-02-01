@@ -1,4 +1,4 @@
-# Business Architecture & Sovereign Trust Model
+# Sovereign Trust Model
 
 ## Executive Summary: The "Brain" and "Muscle" Architecture
 

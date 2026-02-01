@@ -59,7 +59,7 @@ export default withMermaid({
             {text: 'Core Concept', link: '/overview/core-concept'},
             {text: 'Customer Managed Key', link: '/overview/cmk'},
             {text: 'Crypto', link: '/overview/crypto'},
-            {text: 'Business Architecture', link: '/overview/architecture'},
+            {text: 'Trust Model', link: '/overview/trust-model'},
           ]
         }
       ],
