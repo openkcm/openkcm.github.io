@@ -50,24 +50,24 @@ onBeforeUnmount(() => {
           class="zoom-overlay"
           role="dialog"
           aria-modal="true"
-          @mousedown="close"          <!-- close on mousedown to prevent click-through -->
+          @mousedown="close"
       >
-      <!-- Close button -->
-      <button
-          class="zoom-close"
-          aria-label="Close image"
-          @mousedown.stop           <!-- stop mousedown so button works -->
-      >
-      ×
-      </button>
+        <!-- Close button -->
+        <button
+            class="zoom-close"
+            aria-label="Close image"
+            @mousedown.stop="close"
+        >
+          ×
+        </button>
 
-      <!-- Full-size image -->
-      <img
-          :src="src"
-          :alt="alt"
-          class="zoom-full"
-          @mousedown.stop           <!-- prevent click-through on image -->
-      />
+        <!-- Full-size image -->
+        <img
+            :src="src"
+            :alt="alt"
+            class="zoom-full"
+            @mousedown.stop
+        />
       </div>
     </teleport>
   </figure>
