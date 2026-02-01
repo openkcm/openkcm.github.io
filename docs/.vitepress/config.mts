@@ -27,12 +27,12 @@ export default withMermaid({
     nav: [
       {text: 'Home', link: '/'},
       {text: 'Overview', link: '/overview'},
-      {
-        text: 'Documentation',
-        items: [
-          {text: 'Software as a Service', link: '/saas/getting-started'},
-        ]
-      },
+      // {
+      //   text: 'Documentation',
+      //   items: [
+      //     {text: 'Software as a Service', link: '/saas/getting-started'},
+      //   ]
+      // },
     ],
 
     editLink: {
@@ -63,39 +63,39 @@ export default withMermaid({
           ]
         }
       ],
-      '/saas/': [
-        {
-          text: 'Software as a Service',
-          collapsed: false,
-          items: [
-            {text: 'Getting Started', link: '/saas/getting-started'},
-          ],
-        },
-        {
-          text: 'Usage Guides',
-          collapsed: true,
-          items: [
-            {text: 'Overview', link: '/saas/usage-guides/'},
-          ],
-        },
-        {
-          text: "Architecture",
-          collapsed: false,
-          items: [
-            {text: 'Overview', link: '/saas/architecture/'},
-          ],
-        },
-
-        {
-          text: "API References",
-          collapsed: true,
-          items: [
-            {text: 'Overview', link: '/saas/api-references/'},
-            {text: 'CMK', link: '/saas/api-references/cmk'},
-            {text: 'Crypto', link: '/saas/api-references/crypto'},
-          ],
-        },
-      ],
+      // '/saas/': [
+      //   {
+      //     text: 'Software as a Service',
+      //     collapsed: false,
+      //     items: [
+      //       {text: 'Getting Started', link: '/saas/getting-started'},
+      //     ],
+      //   },
+      //   {
+      //     text: 'Usage Guides',
+      //     collapsed: true,
+      //     items: [
+      //       {text: 'Overview', link: '/saas/usage-guides/'},
+      //     ],
+      //   },
+      //   {
+      //     text: "Architecture",
+      //     collapsed: false,
+      //     items: [
+      //       {text: 'Overview', link: '/saas/architecture/'},
+      //     ],
+      //   },
+      //
+      //   {
+      //     text: "API References",
+      //     collapsed: true,
+      //     items: [
+      //       {text: 'Overview', link: '/saas/api-references/'},
+      //       {text: 'CMK', link: '/saas/api-references/cmk'},
+      //       {text: 'Crypto', link: '/saas/api-references/crypto'},
+      //     ],
+      //   },
+      // ],
 
       socialLinks: [
         {icon: 'github', link: 'https://github.com/openkcm/'}
