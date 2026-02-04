@@ -18,6 +18,9 @@ cryptographic keys efficiently while ensuring compliance with stringent security
     - theme: alt
       text: Software as a Service
       link: /saas/getting-started
+    - theme: alt
+      text: Roadmap
+      link: https://github.com/openkcm/.github/blob/main/ROADMAP.md
 
 features:
   - title: 🔗 Customer Managed Keys

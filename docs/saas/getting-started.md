@@ -5,12 +5,12 @@ Before you are using OpenKCM SaaS, please make yourself familiar with the core c
 
 ## Local Setup
 
-In Progress ...
+This section is under active development. Check our [Roadmap](https://github.com/openkcm/.github/blob/main/ROADMAP.md) for updates.
 
 ### Prerequisites
 
-In Progress ...
+This section is under active development. Check our [Roadmap](https://github.com/openkcm/.github/blob/main/ROADMAP.md) for updates.
 
 ### Installation
 
-In Progress ...
+This section is under active development. Check our [Roadmap](https://github.com/openkcm/.github/blob/main/ROADMAP.md) for updates.
