@@ -13,9 +13,9 @@ hero:
     - theme: brand
       text: Overview
       link: /overview/
-    - theme: alt
-      text: Software as a Service
-      link: /saas/getting-started
+#    - theme: brand
+#      text: Software as a Service
+#      link: /saas/getting-started
     - theme: brand
       text: Roadmap
       link: https://github.com/openkcm/.github/blob/main/ROADMAP.md
