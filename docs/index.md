@@ -9,7 +9,7 @@ hero:
 meet the growing demands of data protection in modern cloud environments. It helps organizations manage 
 cryptographic keys efficiently while ensuring compliance with stringent security and privacy standards."
   image:
-    src: https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/logo.svg
+    src: https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/official_logo.svg
     alt: OpenKCM
   actions:
     - theme: brand
