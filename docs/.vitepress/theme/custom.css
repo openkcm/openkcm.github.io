@@ -1,16 +1,36 @@
 :root {
+    /* Brand colors */
+    --color-primary: #008870;
+    --color-primary-hover: #007870;
+    --color-primary-light: #009870;
+
+    --color-bg: #ffffff;
+    --color-bg-soft: #f6f8f7;
+
+    --color-text: #1f2937;
+
+    /* VitePress theme overrides */
+    --vp-c-brand-1: #008870;
+    --vp-c-brand-2: #007870;
+    --vp-c-brand-3: #009870;
+    --vp-c-brand-soft: rgba(0, 136, 112, 0.14);
+
     --vp-home-hero-name-color: transparent;
     --vp-home-hero-name-background: -webkit-linear-gradient(
             120deg,
-            #3456fe 30%,
-            #41d1ff
+            #008870 30%,
+            #009870
     );
     --vp-home-hero-image-background-image: linear-gradient(
             -45deg,
-            #3474fe 50%,
-            #47caff 50%
+            #a3e4c4 50%,
+            #c8f0db 50%
     );
     --vp-home-hero-image-filter: blur(44px);
+
+    /* Hero image size */
+    --vp-home-hero-image-max-width: 400px;
+    --vp-home-hero-image-max-height: 400px;
 }
 
 @media (min-width: 640px) {
@@ -25,9 +45,18 @@
     }
 }
 
-.VPHero .VPImage {
+.VPHero .VPImage,
+.VPHero .image-container img,
+.VPHero .image-src {
     filter: drop-shadow(-2px 4px 6px rgba(0, 0, 0, 0.2));
     padding: 18px;
+    max-width: 400px !important;
+    width: 100% !important;
+    height: auto !important;
+}
+
+.VPHero .image-container {
+    max-width: 400px !important;
 }
 
 /* used in reference/default-theme-search */
@@ -106,3 +135,15 @@ html.dark .zoom-full {
     );
 }
 /* End ZoomImage styles */
+
+/* Green feature cards (2nd and 4th) */
+.VPHome .VPFeatures .items .item:nth-child(2) .VPLink,
+.VPHome .VPFeatures .items .item:nth-child(4) .VPLink {
+    background: linear-gradient(135deg, rgba(0, 136, 112, 0.1) 0%, rgba(0, 152, 112, 0.15) 100%) !important;
+    border-color: rgba(0, 136, 112, 0.3) !important;
+}
+
+.VPHome .VPFeatures .items .item:nth-child(2) .VPLink:hover,
+.VPHome .VPFeatures .items .item:nth-child(4) .VPLink:hover {
+    border-color: #008870 !important;
+}

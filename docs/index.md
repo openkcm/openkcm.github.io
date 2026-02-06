@@ -5,9 +5,7 @@ layout: home
 hero:
   name: "OpenKCM"
   text: "Open Key Chain Manager"
-  tagline: "Secure, scalable, and open-source Key Management tailored to 
-meet the growing demands of data protection in modern cloud environments. It helps organizations manage 
-cryptographic keys efficiently while ensuring compliance with stringent security and privacy standards."
+  tagline: "Secure, scalable, and open-source Key Management tailored to meet the growing demands of data protection in modern cloud environments. It helps organizations manage cryptographic keys efficiently while ensuring compliance with stringent security and privacy standards."
   image:
     src: https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/official_logo.svg
     alt: OpenKCM
@@ -18,7 +16,7 @@ cryptographic keys efficiently while ensuring compliance with stringent security
     - theme: alt
       text: Software as a Service
       link: /saas/getting-started
-    - theme: alt
+    - theme: brand
       text: Roadmap
       link: https://github.com/openkcm/.github/blob/main/ROADMAP.md
 
