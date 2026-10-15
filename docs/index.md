@@ -32,7 +32,9 @@ features:
     link: /overview/krypton
   - title: 🔌 Pluggable
     details: Keystores and user directories connect through plugins. AWS KMS and SCIM directories are supported today.
+    link: /components/cmk/plugins
     
   - title: 👨‍💻 Kubernetes-native
     details: Every service ships as a container image with a Helm chart, and the documentation covers configuration and hardening.
+    link: /components/cmk/security/configuration
 ---
