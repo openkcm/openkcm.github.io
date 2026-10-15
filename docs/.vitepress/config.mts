@@ -14,6 +14,12 @@ export default withMermaid({
     href: 'https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/official_logo.svg'
   }]],
   vite: {
+    // Pre-bundle mermaid with all its dependencies for the dev server. Without
+    // it, Vite serves mermaid's CommonJS dependencies (such as fastdom) as ES
+    // modules and the page fails to load.
+    optimizeDeps: {
+      include: ['mermaid'],
+    },
     resolve: {
       alias: [
         {

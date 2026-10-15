@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "mermaid": "^11.17.2",
     "vitepress": "^1.6.4",
     "vitepress-plugin-mermaid": "^2.0.17"
   },
@@ -7,5 +8,8 @@
     "docs:dev": "node_modules/.bin/vitepress dev docs",
     "docs:build": "node_modules/.bin/vitepress build docs",
     "docs:preview": "node_modules/.bin/vitepress preview docs"
+  },
+  "overrides": {
+    "katex": "^0.18.2"
   }
 }

@@ -12,7 +12,7 @@ IMAGE=openkcm/openkcm.github.io
 .PHONY: startdocs
 startdocs: ## Start the VitePress dev server in Docker on http://localhost:5173.
 	$(CONTAINER_TOOL) build -t $(IMAGE) -f docs/Dockerfile . --load
-	$(CONTAINER_TOOL) run --rm -p 5173:5173 -v "$(CURDIR)":/app -v /app/node_modules $(IMAGE)
+	$(CONTAINER_TOOL) run --rm -p 127.0.0.1:5173:5173 -v "$(CURDIR)":/app -v /app/node_modules $(IMAGE)
 
 # Run the docs with Node on the host, without Docker.
 # Dependencies are installed only when package-lock.json changes.
