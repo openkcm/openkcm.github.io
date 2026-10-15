@@ -19,25 +19,27 @@ The OpenKCM Documentation project uses Github to manage reviews of pull requests
 * If you are looking to make your first contribution, follow [Steps to Contribute](#steps-to-contribute)
 
 * If you have a trivial fix or improvement, go ahead and create a pull request and
-address (with @...) a suitable maintainer of this repository 
-(see [CODEOWNERS](https://github.com/openkcm/openkcm.github.io/blob/main/CODEOWNERS) 
+address (with @...) a suitable maintainer of this repository
+(see the [contributors](https://github.com/openkcm/openkcm.github.io/graphs/contributors)
 of this repository) in the description of the pull request.
 
 * If you plan to do something more involved, first discuss your ideas by creating an 
 [issue](https://github.com/openkcm/openkcm.github.io/issues) for this repository. This will avoid unnecessary work and surely give you 
 and us a good deal of inspiration.
 
-!!! note 
-    Please follow these style guidelines to have your contribution considered by the maintainers:
-    [Documentation style guidelines](https://github.com/openkcm/openkcm.github.io/blob/main/docs/contribute/style-guide.md)
+::: info
+Please follow these style guidelines to have your contribution considered by the maintainers:
+[Documentation style guidelines](https://github.com/openkcm/openkcm.github.io/blob/main/docs/contribute/style-guide.md)
+:::
 
 ## Steps to Contribute
 
 Do you want to work on an issue? You are welcome to claim an existing one by commenting on it in GitHub. 
 
-!!! note
-    Perform a cursory search to see if the issue has already been taken by someone else. 
-    This will prevent misunderstanding and duplication of effort from contributors on the same issue.
+::: info
+Perform a cursory search to see if the issue has already been taken by someone else. 
+This will prevent misunderstanding and duplication of effort from contributors on the same issue.
+:::
 
 If you have questions about one of the issues please comment on them and one of the 
 maintainers will clarify it.
@@ -69,10 +71,12 @@ git clone git@github.com:openkcm/openkcm.github.io.git
 cd openkcm.github.io
 ```
 
-* Create a branch from the `main` using 'git checkout' command. 
-!!! note 
-    If needed, rebase to the current `main` branch before submitting your pull request. If it doesn't merge properly
-    with `main` you may be asked to rebase your changes.
+* Create a branch from the `main` using 'git checkout' command.
+
+::: info
+If needed, rebase to the current `main` branch before submitting your pull request. If it doesn't merge properly
+with `main` you may be asked to rebase your changes.
+:::
 
 ```shell
 git checkout -b my_feature
@@ -91,8 +95,9 @@ git commit -m "Something meaningful"
 git push origin my_feature
 ```
 
-!!! note
-    Alternatively you can amend your commit before pushing if you forgot something by using `git commit --amend`
+::: info
+Alternatively you can amend your commit before pushing if you forgot something by using `git commit --amend`
+:::
 
 * Create _Work In Progress [WIP]_ pull requests only if you need a clarification or an explicit review before you can 
 continue your work item.
