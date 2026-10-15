@@ -2,8 +2,10 @@
 
 CMK (Customer-Managed Keys) is the OpenKCM product for governing customer keys.
 Tenants use it to manage their keys in their own keystores, link the keys to
-the systems that use them, and control who may do what. CMK consists of five
-services, plugins and shared libraries.
+the systems that use them, and control who may do what. CMK consists of six
+services, plugins and shared libraries. For its cryptographic key operations,
+CMK requires [Krypton](/components/krypton/), which it drives through the
+CMK-Krypton bridge.
 
 This section describes what each service does, based on its source code, how
 the services work together, and how to configure and secure them.
@@ -17,6 +19,7 @@ the services work together, and how to configure and secure them.
 | [Registry](/components/cmk/registry) | Global registry of tenants and the systems they own | [registry][registry] |
 | [ExtAuthZ](/components/cmk/extauthz) | Authenticates every API request, evaluates Cedar policies, signs client data | [extauthz][extauthz] |
 | [Session Manager](/components/cmk/session-manager) | OIDC login, browser sessions and per-tenant identity provider trust | [session-manager][sm] |
+| [CMK-Krypton bridge](/components/cmk/krypton-bridge) | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [cmk-krypton-bridge][bridge] |
 
 ## How the services work together
 
@@ -35,6 +38,8 @@ flowchart LR
     CMK -- "OIDC trust (gRPC)" --> SM
     Registry["Registry"] -- "tenant jobs (Orbital / AMQP)" --> CMK
     CMK -- "tasks (Orbital / AMQP)" --> Systems["Regional systems"]
+    CMK -- "key tasks (Orbital / AMQP)" --> Bridge["CMK-Krypton bridge"]
+    Bridge -- "gRPC" --> Krypton["Krypton"]
 ```
 
 - The **CMK UI** runs in the browser. Users sign in through **Session Manager**,
@@ -43,9 +48,12 @@ flowchart LR
   decision. ExtAuthZ checks the session, token or client certificate and adds
   signed client data to the request.
 - **CMK** verifies the client data, authorizes the call and performs it. Key
-  operations run in the customer's keystore through plugins.
+  operations run in the keystores through plugins.
 - The **Registry** onboards tenants and sends them to the CMK of their region.
   CMK propagates key and system changes to the regional systems.
+- The **CMK-Krypton bridge** receives CMK's key tasks and creates and updates
+  the corresponding keys in [Krypton](/components/krypton/), which CMK requires
+  for its cryptographic key operations.
 
 ## Supporting building blocks
 
@@ -72,6 +80,7 @@ which settings to review before going live.
 [registry]: https://github.com/openkcm/registry
 [extauthz]: https://github.com/openkcm/extauthz
 [sm]: https://github.com/openkcm/session-manager
+[bridge]: https://github.com/openkcm/cmk-krypton-bridge
 [plugin-sdk]: https://github.com/openkcm/plugin-sdk
 [ksp]: https://github.com/openkcm/keystore-plugins
 [imp]: https://github.com/openkcm/identity-management-plugins

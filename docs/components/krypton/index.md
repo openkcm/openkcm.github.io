@@ -1,9 +1,9 @@
 # Krypton
 
-Krypton is one of the two OpenKCM products, separate from
-[CMK](/components/cmk/). It manages key hierarchies and key material for tenants: it generates keys,
-protects each key with its parent key, stores the protected key material, and
-provides keys to authorized workloads.
+Krypton is one of the two OpenKCM components. It creates and operates
+cryptographic keys: it generates key hierarchies for tenants, protects each key
+with its parent key, stores the protected key material, and provides keys to
+authorized workloads.
 
 Repository: [openkcm/krypton](https://github.com/openkcm/krypton)
 
@@ -11,20 +11,6 @@ Repository: [openkcm/krypton](https://github.com/openkcm/krypton)
 Krypton is under active development and not intended for production use yet.
 This page gives an overview; detailed documentation will follow.
 :::
-
-## Krypton and CMK
-
-Krypton and CMK are separate products with their own components, repositories
-and releases:
-
-| Product | Responsibility |
-| --- | --- |
-| Krypton | Key hierarchies, key material and key delivery to workloads |
-| [CMK](/components/cmk/) | Governance of customer keys in the customers' own keystores |
-
-A proof of concept, the [CMK-Krypton bridge](https://github.com/openkcm/cmk-krypton-bridge),
-explores connecting CMK's key levels to a Krypton key hierarchy. It is not part
-of a release.
 
 ## Concepts
 

@@ -72,6 +72,7 @@ export default withMermaid({
             {text: 'Registry', link: '/components/cmk/registry'},
             {text: 'ExtAuthZ', link: '/components/cmk/extauthz'},
             {text: 'Session Manager', link: '/components/cmk/session-manager'},
+            {text: 'CMK-Krypton bridge', link: '/components/cmk/krypton-bridge'},
             {text: 'Plugins', link: '/components/cmk/plugins'},
           ]
         },
@@ -109,11 +110,11 @@ export default withMermaid({
         {
           text: 'Overview',
           items: [
-            {text: 'Index', link: '/overview/'},
-            {text: 'Core Concept', link: '/overview/core-concept'},
-            {text: 'Customer Managed Key', link: '/overview/cmk'},
-            {text: 'Crypto', link: '/overview/crypto'},
-            {text: 'Trust Model', link: '/overview/trust-model'},
+            {text: 'Introduction', link: '/overview/'},
+            {text: 'Core concepts', link: '/overview/core-concept'},
+            {text: 'CMK', link: '/overview/cmk'},
+            {text: 'Krypton', link: '/overview/krypton'},
+            {text: 'Trust model', link: '/overview/trust-model'},
           ]
         }
       ],

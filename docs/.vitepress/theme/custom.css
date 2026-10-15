@@ -147,3 +147,131 @@ html.dark .zoom-full {
 .VPHome .VPFeatures .items .item:nth-child(4) .VPLink:hover {
     border-color: #008870 !important;
 }
+/* ---------------------------------------------------------------------------
+ * Expandable Mermaid diagrams (see components/DiagramZoom.vue)
+ * ------------------------------------------------------------------------- */
+.vp-doc .mermaid[data-zoomable] {
+    position: relative;
+    cursor: zoom-in;
+    border-radius: 8px;
+    transition: box-shadow 0.2s;
+}
+
+.vp-doc .mermaid[data-zoomable]::after {
+    content: "⤢ Expand";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 2px 8px;
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 6px;
+    background: var(--vp-c-bg-soft);
+    color: var(--vp-c-text-2);
+    font-size: 12px;
+    line-height: 20px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.vp-doc .mermaid[data-zoomable]:hover,
+.vp-doc .mermaid[data-zoomable]:focus-visible {
+    box-shadow: 0 0 0 1px var(--vp-c-divider);
+    outline: none;
+}
+
+.vp-doc .mermaid[data-zoomable]:hover::after,
+.vp-doc .mermaid[data-zoomable]:focus-visible::after {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .vp-doc .mermaid[data-zoomable]::after {
+        opacity: 0.8;
+    }
+}
+
+.diagram-zoom {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background: var(--vp-c-bg);
+}
+
+.diagram-zoom-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    border-bottom: 1px solid var(--vp-c-divider);
+    background: var(--vp-c-bg-soft);
+}
+
+.diagram-zoom-hint {
+    flex: 1;
+    color: var(--vp-c-text-2);
+    font-size: 13px;
+}
+
+.diagram-zoom-toolbar button {
+    min-width: 36px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 6px;
+    background: var(--vp-c-bg);
+    color: var(--vp-c-text-1);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.diagram-zoom-toolbar button:hover {
+    border-color: var(--vp-c-brand-1);
+    color: var(--vp-c-brand-1);
+}
+
+.diagram-zoom-toolbar .diagram-zoom-close {
+    margin-left: 6px;
+    font-size: 20px;
+}
+
+.diagram-zoom-level {
+    min-width: 48px;
+    color: var(--vp-c-text-2);
+    font-size: 13px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.diagram-zoom-stage {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+}
+
+.diagram-zoom-stage:active {
+    cursor: grabbing;
+}
+
+.diagram-zoom-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+}
+
+.diagram-zoom-canvas svg {
+    display: block;
+    max-width: none;
+}
+
+@media (max-width: 640px) {
+    .diagram-zoom-hint {
+        display: none;
+    }
+}

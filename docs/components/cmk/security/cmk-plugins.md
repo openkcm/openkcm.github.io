@@ -1,6 +1,6 @@
 # CMK plugin configuration
 
-CMK talks to customer keystores and directories through [plugins](/components/cmk/plugins).
+CMK talks to keystores and user directories through [plugins](/components/cmk/plugins).
 This page shows complete configuration examples for every plugin CMK can use
 today. The fields of a plugin entry are described in the
 [CMK configuration reference](/components/cmk/security/cmk-config#plugins).

@@ -4,7 +4,9 @@ The CMK service is the core service of the [CMK](/components/cmk/) product: the
 governance control plane for customer keys. Tenants
 use it to register their root keys, link those keys to the systems that should
 use them, and control the key lifecycle. CMK holds key metadata and policy, not
-key material: key operations run in the customer's keystore through plugins.
+key material: key operations run in a keystore through plugins, either the
+keystore the platform provides for the tenant or, for HYOK keys, the customer's
+own keystore.
 
 Repository: [openkcm/cmk](https://github.com/openkcm/cmk)
 
@@ -19,6 +21,11 @@ Repository: [openkcm/cmk](https://github.com/openkcm/cmk)
   [CMK authorization](/components/cmk/security/cmk-authorization).
 
 ## Key types
+
+Each tenant gets a dedicated keystore, which CMK takes from a pool of prepared
+keystores. The pool is kept filled through the keystore provider plugin and the
+`keystore:fill` task. System-managed and BYOK keys are created in this keystore;
+HYOK keys stay in the customer's own keystore.
 
 | Key type | Who creates the key material | How CMK uses it |
 | --- | --- | --- |
@@ -52,7 +59,9 @@ by a feature flag.
 ## Propagation to regions
 
 CMK sends changes to the systems in each region as tasks, using
-[Orbital](/components/cmk/registry#orbital) over AMQP:
+[Orbital](/components/cmk/registry#orbital) over AMQP. In a deployment with
+Krypton, the [CMK-Krypton bridge](/components/cmk/krypton-bridge) receives the
+tasks of its region and carries them out in Krypton.
 
 | Task | Purpose |
 | --- | --- |

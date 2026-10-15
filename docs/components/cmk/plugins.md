@@ -1,6 +1,6 @@
 # Plugins
 
-OpenKCM connects to customer keystores, directories and other external systems
+OpenKCM connects to keystores, user directories and other external systems
 through plugins. A plugin runs as a separate process and talks to its host
 service over gRPC, using [HashiCorp go-plugin](https://github.com/hashicorp/go-plugin).
 The interfaces are defined in the [plugin SDK](https://github.com/openkcm/plugin-sdk).

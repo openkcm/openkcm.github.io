@@ -77,7 +77,7 @@ certificate instead.
 - **Service**: CMK trusts only client data signed by ExtAuthZ, and only for its
   short validity period.
 - **Keys**: CMK never holds customer key material. Key operations run in the
-  customer's keystore through keystore plugins.
+  keystores through keystore plugins.
 
 ## Next steps
 

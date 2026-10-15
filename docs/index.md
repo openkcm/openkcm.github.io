@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "OpenKCM"
   text: "Open Key Chain Manager"
-  tagline: "Secure, scalable, and open-source Key Management tailored to meet the growing demands of data protection in modern cloud environments. It helps organizations manage cryptographic keys efficiently while ensuring compliance with stringent security and privacy standards."
+  tagline: "Open-source key management for cloud services: customers keep control over the keys that protect their data, with BYOK, HYOK, roles, approvals and audit."
   image:
     src: https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/official_logo.svg
     alt: OpenKCM
@@ -16,18 +16,23 @@ hero:
 #    - theme: brand
 #      text: Software as a Service
 #      link: /saas/getting-started
-    - theme: brand
+    - theme: alt
+      text: Components
+      link: /components/
+    - theme: alt
       text: Roadmap
       link: https://github.com/openkcm/.github/blob/main/ROADMAP.md
 
 features:
-  - title: 🔗 Customer Managed Keys
-    details: Centralized solution to govern customer encryption keys (Level 1 keys), with BYOK (Bring Your Own Key) and HYOK (Hold Your Own Key) capabilities.
-  - title: 🧱 Crypto Layer
-    details: Solution to govern key encryption keys (Level 2-4 keys).
-  - title: ☁️ SaaS Solution
-    details: Pluggable for hybrid and edge deployments.
+  - title: 🔗 CMK
+    details: Govern customer keys with system-managed keys, BYOK (bring your own key) and HYOK (hold your own key), per-tenant identity providers, roles, approvals and audit.
+    link: /overview/cmk
+  - title: 🧱 Krypton
+    details: Creates and operates the cryptographic keys, with key hierarchies and key delivery over KMIP. Used by CMK and usable on its own. In pre-production.
+    link: /overview/krypton
+  - title: 🔌 Pluggable
+    details: Keystores and user directories connect through plugins. AWS KMS and SCIM directories are supported today.
     
-  - title: 👨‍💻 DevOps-Ready by Design
-    details: End-to-end Software and lifecycle management powered by Kubernetes.
+  - title: 👨‍💻 Kubernetes-native
+    details: Every service ships as a container image with a Helm chart, and the documentation covers configuration and hardening.
 ---
