@@ -92,9 +92,18 @@ security.
 ## Signed client data
 
 - Keep the private signing keys in a Secret that only ExtAuthZ can read, and
-  give CMK only the public keys.
+  give CMK only the public keys, in a Secret of its own. Check that every `.pem`
+  entry of CMK's Secret is a public key, with the
+  [Secret check command](/components/cmk/security/client-data#kubernetes-secrets).
+- Use RSA keys of at least 3072 bits, and a new key ID for every key pair.
+- Remove public keys from CMK when their private keys are retired; CMK accepts
+  client data signed with any key in its directory.
 - Rotate the signing key regularly, following the
-  [rotation procedure](/components/cmk/security/client-data#key-rotation).
+  [rotation procedure](/components/cmk/security/client-data#key-rotation). If a
+  private key may be exposed, follow
+  [Replacing a compromised key](/components/cmk/security/client-data#replacing-a-compromised-key).
+- Route all CMK API traffic through the gateway, so that every request carries
+  client data signed by ExtAuthZ.
 - Keep clocks synchronized; client data is valid for one minute.
 
 ## Service-to-service traffic

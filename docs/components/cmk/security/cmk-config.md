@@ -163,9 +163,23 @@ from ExtAuthZ.
 | `signingKeysPath` | - | Directory with ExtAuthZ's **public** keys, one `<key ID>.pem` per key. **Required**: startup fails with `path does not exist` |
 | `authContextFields` | - | Entries of the client data `auth_context` that CMK keeps. **Must include `issuer`**: CMK lists the tenants of a user by the issuer of their identity provider. The kept entries are also passed to the identity management plugin |
 
+- CMK loads every file directly in `signingKeysPath` whose name ends with `.pem`
+  and uses the file name without `.pem` as the key ID. Other files, such as a
+  `keyId` file, and subdirectories are ignored.
+- The key IDs must match ExtAuthZ's: ExtAuthZ signs with the private key named in
+  its `keyId` file and writes that key ID into the client data as `kid`. Name
+  each public key exactly like its private key, for example `key1.pem`; a file
+  named `key1.pub.pem` gets the key ID `key1.pub`.
 - Key files are PEM: `BEGIN PUBLIC KEY`, `BEGIN RSA PUBLIC KEY` or a certificate.
-  Only `RS256` is accepted.
-- The key IDs must match the key IDs of ExtAuthZ's private keys.
+  Only `RS256` is accepted. The directory must never hold private keys.
+- Keep several public keys in the directory during a
+  [key rotation](/components/cmk/security/client-data#key-rotation); the `kid` of
+  each request selects one.
+- The directory is read at startup and then watched. Restart the API server after
+  you change the Secret, to be sure the change is used.
+- Client data that is missing, signed with an unknown key ID, wrongly signed or
+  expired is rejected with `500 NO_BUSINESS_DATA`. The log entry
+  `Client data processing error` gives the reason.
 
 ```yaml
 clientData:
@@ -174,6 +188,22 @@ clientData:
     - issuer        # required
     - client_id
 ```
+
+The public keys come from a Secret of their own:
+
+```yaml
+extraVolumes:
+  - name: client-data-public-keys
+    secret:
+      secretName: cmk-client-data-public-keys   # key1.pem, key2.pem: public keys only
+extraVolumeMounts:
+  - name: client-data-public-keys
+    mountPath: /etc/signing-keys
+    readOnly: true
+```
+
+[Signed client data](/components/cmk/security/client-data#cmk-verification)
+lists CMK's checks in order, with the log entry for each failure.
 
 ## services
 
@@ -512,7 +542,10 @@ for the group names your identity provider must issue.
 | Tasks do not run | `unsupported secret type for task queue`, `failed to load MTLS config` | `scheduler.taskQueue.secretRef` wrong |
 | Systems not updated | `target not configured for region` | Add the region to `eventProcessor.targets` |
 | Empty tenant schemas | `No migration files found, skipping` | Wrong `database.migrator` paths |
-| API `500 NO_BUSINESS_DATA` | `public key not found or invalid`, `client data has expired` | Public key for ExtAuthZ's key ID missing, or clocks out of sync |
+| API `500 NO_BUSINESS_DATA` | `public key not found or invalid` | No `<kid>.pem` in `clientData.signingKeysPath` for ExtAuthZ's key ID, or the file is not an RSA public key |
+| API `500 NO_BUSINESS_DATA` | `crypto/rsa: verification error` | The public key does not belong to ExtAuthZ's private key with the same key ID |
+| API `500 NO_BUSINESS_DATA` | `client data has expired` | Clocks of ExtAuthZ and CMK differ by more than a minute |
+| API `500 NO_BUSINESS_DATA` | `no client data header found` | The request did not pass ExtAuthZ |
 | API `403 ZERO_ROLES_NOT_ALLOWED` | - | None of the user's groups is mapped to a role |
 | API `403 MULTIPLE_ROLES_NOT_ALLOWED` | - | The user's groups map to different roles |
 | Listing tenants fails | - | `issuer` missing from `clientData.authContextFields` |

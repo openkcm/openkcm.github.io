@@ -29,7 +29,7 @@ settings marked as *credentials* take a `secretRef`. Both are described in
 | Cedar policies | At startup | Restart |
 | Trusted subjects | At startup | Restart |
 | CSRF secret | At startup | Restart |
-| Client data signing keys | Directory watched; key read on every request | Restart the pods after you update a Kubernetes Secret, to be sure the new files are used |
+| Client data signing keys | At startup, then the directory is watched; the key is taken from memory for every request | Restart. In a Kubernetes Secret volume a changed `keyId` value is not picked up |
 | OIDC discovery documents | On first use, then kept for the process lifetime | Restart |
 | Identity provider signing keys (JWKS) | On first use, cached for 5 minutes per key ID | Automatic |
 
@@ -515,16 +515,24 @@ session ID. Tokens do not expire on their own; they end with the session.
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `signingKeyIDFilePath` | - | Path of a file that contains the ID of the active signing key |
+| `signingKeyIDFilePath` | - | Path of a file that contains the ID of the active signing key. Its directory holds the private keys |
 
 - The file content, with surrounding whitespace removed, is the key ID.
 - The private key is read from `<key ID>` or `<key ID>.pem` in the same
   directory.
-- Supported formats: PEM-encoded RSA private keys in PKCS #1
+- Supported formats: unencrypted PEM-encoded RSA private keys in PKCS #1
   (`BEGIN RSA PRIVATE KEY`) or PKCS #8 (`BEGIN PRIVATE KEY`).
-- The key is read for every allowed request. If it is missing or invalid,
-  allowed requests fail with `500`.
+- ExtAuthZ writes the key ID into every client data as `kid`. CMK must have the
+  matching public key as `<key ID>.pem` in its
+  [`clientData.signingKeysPath`](/components/cmk/security/cmk-config#clientdata).
+- The key is not checked at startup. If it is missing or invalid, every allowed
+  request fails at the gateway with `500 INTERNAL_SERVER_ERROR`, and ExtAuthZ
+  logs `Check(): failed to encode client data`.
 - If the directory does not exist, startup fails with `path does not exist`.
+
+[Signed client data](/components/cmk/security/client-data#signing-keys) describes
+both sides in detail: the signing steps, CMK's checks, key generation, rotation
+and troubleshooting.
 
 Example Secret, with two keys so you can rotate:
 
@@ -544,8 +552,24 @@ stringData:
     ...
 ```
 
-See [Signed client data](/components/cmk/security/client-data) for the payload and
-the rotation procedure.
+Mount it in the directory of the key ID file. These are the Helm chart's
+defaults:
+
+```yaml
+extraVolumes:
+  - name: extauthz-signing-keys-volume
+    projected:
+      sources:
+        - secret:
+            name: extauthz-signing-keys-secret
+extraVolumeMounts:
+  - name: extauthz-signing-keys-volume
+    mountPath: /etc/extauthz-signing
+    readOnly: true
+```
+
+CMK gets only the public keys, under the same file names, in a Secret of its
+own. Never mount this Secret into CMK.
 
 ## featureGates
 
@@ -651,4 +675,5 @@ Set `logger.level: debug` to see the reason for each decision in the log entry
 | Session `401` | `CSRF token is not valid` | `x-csrf-token` missing, or the CSRF secrets of ExtAuthZ and Session Manager differ (including a trailing newline) |
 | Session `401` | `failed to get session from session manager` | Session Manager not reachable, or wrong `secretRef` |
 | Session `401` | `missing tenant id in the path` | Path ends right after the session prefix |
-| Allowed requests `500` | `signing key ID file "keyId" not found`, `failed to parse private key` | Signing key Secret incomplete or not an RSA private key |
+| Allowed requests `500 INTERNAL_SERVER_ERROR` | `signing key ID file "keyId" not found`, `signing key with ID "key2" not found`, `failed to parse private key` | Signing key Secret incomplete, or not an unencrypted RSA private key |
+| CMK answers `500 NO_BUSINESS_DATA` | CMK: `public key not found or invalid`, `crypto/rsa: verification error` | CMK has no public key for ExtAuthZ's key ID, or one that does not match. See [client data troubleshooting](/components/cmk/security/client-data#troubleshooting) |

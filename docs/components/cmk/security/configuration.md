@@ -51,7 +51,7 @@ flowchart LR
 | What | Where | Rule |
 | --- | --- | --- |
 | CSRF secret | Session Manager `sessionManager.csrfSecret`, ExtAuthZ `csrfSecret` | **The same secret in both services**: identical bytes, at least 32. See [Shared CSRF secret](#shared-csrf-secret) |
-| Client data signing keys | ExtAuthZ `clientData.signingKeyIDFilePath`, CMK `clientData.signingKeysPath` | ExtAuthZ has the private keys, CMK the public keys, with the same file names |
+| Client data signing keys | ExtAuthZ `clientData.signingKeyIDFilePath`, CMK `clientData.signingKeysPath` | ExtAuthZ's `keyId` file names the active key, for example `key1`. ExtAuthZ has the private key `key1.pem`, CMK the matching public key under the **same** name `key1.pem`. See [Signing keys](/components/cmk/security/client-data#signing-keys) |
 | Session cookie name | Session Manager `sessionCookieTemplate.name` | `__Host-Http-SESSION`. ExtAuthZ reads `__Host-Http-SESSION-<tenant>` |
 | CSRF cookie name | Session Manager `csrfCookieTemplate.name` | `CSRF`. The CMK UI reads `CSRF-<tenant>` |
 | Session paths | ExtAuthZ `sessionPathPrefixes` | `/cmk/v1/`, the CMK API base path; the next segment is the tenant |
@@ -224,6 +224,9 @@ Generate the client data signing key pair and the key ID file:
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out key1.pem
 openssl pkey -in key1.pem -pubout -out key1.pub.pem
 printf 'key1' > keyId
+
+# Check that the public key belongs to the private key: prints nothing if it does
+diff <(openssl pkey -in key1.pem -pubout) key1.pub.pem
 ```
 
 Create the Kubernetes secrets. Both CSRF Secrets are created from the **same**
@@ -687,7 +690,9 @@ extraVolumeMounts:
 ```
 
 - `signingKeysPath` holds ExtAuthZ's **public** keys, named like ExtAuthZ's
-  private keys (`key1.pem`). CMK uses the file name without `.pem` as the key ID.
+  private keys (`key1.pem`). CMK uses the file name without `.pem` as the key ID
+  and picks the key by the `kid` that ExtAuthZ writes into the client data. See
+  [CMK: verification](/components/cmk/security/client-data#cmk-verification).
 - `authContextFields` must contain `issuer`. The entries are also passed to the
   [identity management plugin](/components/cmk/plugins#identity-management-plugins).
 - The tenant manager is the component that turns a tenant's `ApplyAuth` into a

@@ -108,8 +108,12 @@ setup, see [Security configuration](/components/cmk/security/configuration#cedar
 ## Client data for the backend
 
 When a request is allowed, ExtAuthZ adds two headers for the backend service:
-`x-client-data` and `x-client-data-signature`. See
-[Signed client data](/components/cmk/security/client-data).
+`x-client-data` and `x-client-data-signature`. It signs the client data with
+the RSA private key named in its `keyId` file
+(`clientData.signingKeyIDFilePath`), and writes that key ID into the client data.
+CMK verifies the signature with the public key of the same name
+(`clientData.signingKeysPath`). See
+[Signed client data](/components/cmk/security/client-data#signing-keys).
 
 ## Configuration
 

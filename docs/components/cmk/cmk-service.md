@@ -17,6 +17,9 @@ Repository: [openkcm/cmk](https://github.com/openkcm/cmk)
   them to another key, or unlink them.
 - Propagate key and system changes to the regional systems.
 - Run approval workflows for sensitive operations.
+- Verify the [signed client data](/components/cmk/security/client-data#cmk-verification)
+  that ExtAuthZ adds to every API request, with ExtAuthZ's public keys from
+  `clientData.signingKeysPath`.
 - Map the tenant's identity provider groups to CMK roles. See
   [CMK authorization](/components/cmk/security/cmk-authorization).
 
