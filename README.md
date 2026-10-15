@@ -10,13 +10,28 @@ Here you’ll find detailed guides, architecture overviews, usage instructions, 
 
 ## Running the Documentation Locally
 
-To build and run the documentation container locally, run:
+With Node.js installed, start the development server with live reload:
+
+```
+make devdocs
+```
+
+Without Node.js, run the same development server in a Docker container:
 
 ```
 make startdocs
 ```
 
-Then open your browser and navigate to http://localhost:5173/ to view the documentation site.
+Either way, open http://localhost:5173/ in your browser. Stop the server with Ctrl+C.
+
+To check the production build before you open a pull request, run:
+
+| Command | What it does |
+| --- | --- |
+| `make builddocs` | Builds the static site into `docs/.vitepress/dist` and fails on dead links |
+| `make previewdocs` | Builds the site and serves the result on http://localhost:4173/ |
+
+The Node.js targets install the dependencies with `npm ci` when `package-lock.json` has changed.
 
 ## Cleaning Up
 

@@ -9,14 +9,13 @@ Markdown is basically a structured language similar to source code, it will be
 consumed in rendered form. There is no unified Markdown specification, so
 different renderers will show it in different way.
 
-User-facing documentation will be rendered by `mkdocs` (with the Material theme)
-to static HTML files. `mkdocs` provides several enhancements compared to other
-solutions, such as warning boxes.
+User-facing documentation is rendered by [VitePress](https://vitepress.dev)
+to static HTML files. VitePress provides several enhancements compared to other
+solutions, such as custom containers for tips and warnings.
 
-You can install `mkdocs` with the Material theme to your workstation using `pip`
-and render the page locally to see the result. Do not assume, that your document
-will look OK via `mkdocs`, based on its appearance in GitHub, Gitlab, or in VS
-Code's preview!
+Render the site locally with `make startdocs` (or `npm ci && npm run docs:dev`)
+to see the result. Do not assume, that your document will look OK in VitePress,
+based on its appearance in GitHub, Gitlab, or in VS Code's preview!
 
 ## Document layout
 
@@ -55,8 +54,8 @@ Content.
 
 ## Table of contents
 
-`mkdocs` generates a static `TOC` from the sub-page based on the headers found
-in the page during generation. Do not include any sort of `TOC` to the
+VitePress generates the page outline from the headers found in the page during
+generation. Do not include any sort of `TOC` to the
 user-facing documentation.
 
 ## Line length
@@ -260,20 +259,19 @@ To write monospace texts:
 - Fenced code (with \`\`\`) — only for code or configuration snippets. Syntax
   should be hinted.
 
-!!! note
-
-    Each code block has to have its language specified. For plaintexts or stdouts,
-    use text. For usage refer to official documentation.
+::: info
+Each code block has to have its language specified. For plaintexts or stdouts,
+use text. For usage refer to official documentation.
+:::
 
 To write a block quote, prepend the line with `>`:
 
 > This is a block quote. You can use it to highlight a paragraph.
 
-`mkdocs` with the Material theme supports [admonitions][admonitions] for
-structuring pages.
+VitePress supports [custom containers][containers] (`::: info`, `::: tip`,
+`::: warning`, `::: danger`) for structuring pages.
 
-[admonitions]:
-    https://squidfunk.github.io/mkdocs-material/reference/admonitions/#usage
+[containers]: https://vitepress.dev/guide/markdown#custom-containers
 
 ## Links
 

@@ -1,6 +1,6 @@
 # OpenKCM Customer Management Key: Global Governance & Sovereign Control Plane
 
-**The OpenKCM CMK (Customer Master Key) ** is the strategic "Command Center" of the OpenKCM platform. It provides a centralized interface for defining **Data Sovereignty**, managing **Digital Trust**, and enforcing **Cryptographic Compliance** across a global, multi-cloud estate.
+**The OpenKCM CMK (Customer Managed Key)** is the strategic "Command Center" of the OpenKCM platform. It provides a centralized interface for defining **Data Sovereignty**, managing **Digital Trust**, and enforcing **Cryptographic Compliance** across a global, multi-cloud estate.
 
 In an era where data regulations (GDPR, CCPA, DORA) are becoming stricter, the OpenKCM CMK allows organizations to decouple *data residency* (where data lives) from *data sovereignty* (who controls the access). It ensures that your organization—and your customers—retain absolute control over the "Keys to the Kingdom," regardless of the underlying cloud infrastructure.
 

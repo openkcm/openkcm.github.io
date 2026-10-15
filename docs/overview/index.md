@@ -1,7 +1,6 @@
 # Overview
 
-**OpenKCM** (Open Key Chain Manager) is a secure, scalable, 
-
+**OpenKCM** (Open Key Chain Manager) is a secure, scalable,
 and open-source Key Management Service (KMS) tailored to
 meet the growing demands of data protection in modern cloud environments. It helps organizations manage
 cryptographic keys efficiently while ensuring compliance with stringent security and privacy standards.
