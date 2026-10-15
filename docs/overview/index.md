@@ -1,43 +1,115 @@
 # Overview
 
-**OpenKCM** (Open Key Chain Manager) is a secure, scalable, 
+**OpenKCM** (Open Key Chain Manager) is an open-source key management platform
+for cloud services. It lets the customers of a cloud service keep control over
+the keys that protect their data: the keys are kept in a keystore dedicated to
+the customer, or in the customer's own keystore, and the customer decides when
+they may be used.
 
-and open-source Key Management Service (KMS) tailored to
-meet the growing demands of data protection in modern cloud environments. It helps organizations manage
-cryptographic keys efficiently while ensuring compliance with stringent security and privacy standards.
+## Why OpenKCM
 
-As enterprises increasingly store sensitive data in the cloud, **robust encryption practices** are critical. OpenKCM enables organizations to:
+Cloud services encrypt the data they store for their customers. Usually the
+provider also holds the keys, so customers have to trust the provider with
+unrestricted access to their data. Many organizations cannot accept that:
+regulations such as GDPR and DORA, sector rules and data sovereignty
+requirements ask that customers decide who may use their keys, where, and for
+how long, and that they can withdraw that permission.
 
-- 🛡️ **Protect data at rest** using strong encryption keys
-- 🔐 **Create, manage, and control** encryption keys across services and regions
-- 📊 **Ensure compliance** with jurisdictional and regulatory requirements
+OpenKCM gives a cloud service the building blocks to offer this control:
 
-OpenKCM provides a centralized solution to govern encryption keys, allowing fine-grained control, auditability, and flexibility in key usage policies.
+- **Customer-managed keys.** Keys are created in a keystore dedicated to the
+  tenant, created from key material the customer brings, or kept in the
+  customer's own keystore.
+- **Governance without key material.** The control plane manages metadata,
+  permissions and policies. Key operations run in the keystore that holds the
+  key.
+- **Multi-tenant and multi-region.** Each tenant has its own keys, identity
+  provider and data; key changes are propagated to the systems of each region.
+- **Separation of duties.** Tenant administrators, key administrators and
+  auditors have different, non-overlapping roles; sensitive changes can require
+  approval by several people.
+- **Auditability.** Key, system and access events are sent as audit events to
+  the customer's logging infrastructure.
+- **Open and pluggable.** Keystores and user directories connect through
+  plugins. OpenKCM is open source under the Apache 2.0 license and runs on
+  Kubernetes.
 
-## 🧩 Key Features
+## Two components
 
-| Feature                       | Description                                                      |
-| ----------------------------- | ---------------------------------------------------------------- |
-| 🔁 Key Hierarchies            | Organize keys by technical service, provider, and region         |
-| 🗝️ BYOK (Bring Your Own Key) | Import your own encryption keys                                  |
-| 🔐 HYOK (Hold Your Own Key)   | Store and control master keys within your own infrastructure     |
+OpenKCM consists of two components:
 
+| Component | What it does | Status |
+| --- | --- | --- |
+| [CMK](/overview/cmk) (Customer-Managed Keys) | Governs customer keys: tenants, keys and their keystores, the systems that use them, roles, approval workflows and audit | Available |
+| [Krypton](/overview/krypton) | Creates and operates the cryptographic keys: key hierarchies, key material and key delivery to workloads | Pre-production |
 
-## 🧩 Strategic Capabilities
+How they relate:
 
-| Capability | Description                                             | Business Value |
-| :--- |:--------------------------------------------------------| :--- |
-| **Recursive Unsealing** | Keys are derived in a strict chain (L1 → L2 → L3 → L4). | **Mathematical Isolation.** Data cannot be decrypted without the L1 Root being active. |
-| **Split-Execution** | **Gateways** generate keys; **Cores** wrap them.        | **Hyperscale Sovereignty.** Supports billions of ops/sec without exposing root keys to the edge. |
-| **Sovereign Kill-Switch** | Instant destruction of L2/L3 keys in memory.            | **Guaranteed Exit.** When a customer leaves, their data becomes cryptographically unreadable instantly. |
-| **Plug-and-Play Storage** | Gateways use pluggable vaults.                          | **Flexible Deployment.** Run anywhere—on-prem, cloud, or edge. |
+- **CMK uses Krypton.** CMK governs the customer keys; the cryptographic keys
+  below them, which protect the data, are created and operated by Krypton. CMK
+  therefore requires Krypton for its cryptographic key operations, and drives it
+  through the **CMK-Krypton bridge**, a CMK service that turns CMK's decisions
+  into Krypton requests.
+- **Krypton stands on its own.** Krypton does not depend on CMK. It can be
+  deployed and used independently by any workload that needs managed key
+  hierarchies.
 
-## 🎯 Who Should Use OpenKCM?
+```mermaid
+flowchart TB
+    subgraph Customer["Customer"]
+        direction LR
+        IdP["Identity provider<br/>and directory"]
+        KS["Own keystore<br/>(HYOK keys)"]
+    end
+    subgraph CMK["CMK"]
+        direction LR
+        CMKS["CMK services<br/>governance of customer keys"]
+        BR["CMK-Krypton bridge"]
+    end
+    TKS["Tenant keystores<br/>(for example AWS KMS)"]
+    subgraph KRY["Krypton"]
+        KR["Krypton<br/>cryptographic keys"]
+    end
+    W["Workloads of the<br/>cloud service"]
+    IdP -- "sign-in, users, groups" --> CMKS
+    CMKS -- "customer keys" --> KS
+    CMKS -- "customer keys" --> TKS
+    CMKS -- "key tasks" --> BR
+    BR -- "key operations" --> KR
+    W -- "keys over KMIP" --> KR
+```
 
-OpenKCM is ideal for:
+## What is available today
 
-- Cloud-native organizations handling **regulated or sensitive data**
-- Enterprises requiring **key lifecycle management** with regional awareness
-- SaaS platforms seeking **BYOK/HYOK integration** for their customers
-- Developers building **compliant, encrypted storage solutions**
+| Capability | Status |
+| --- | --- |
+| System-managed keys, created in a keystore that the platform provides for the tenant (AWS KMS) | Available |
+| Bring your own key: importing the customer's key material (BYOK, AWS KMS) | Available |
+| Hold your own key: linking an existing key in the customer's own keystore (HYOK, AWS KMS) | Available |
+| Keystores other than AWS KMS | Not yet available; can be added as keystore plugins |
+| Sign-in with each tenant's own OpenID Connect identity provider | Available |
+| Roles, approval workflows and audit events | Available |
+| Propagation of key changes to the systems of each region | Available |
+| Key hierarchies, key storage and key delivery over KMIP (Krypton) | Pre-production |
+| CMK using Krypton through the CMK-Krypton bridge | Early stage |
+| Customer key protecting the Krypton key hierarchy | Not yet available |
+| Gateway components running next to the workloads | Not yet available |
 
+## Who uses OpenKCM
+
+- **Cloud and SaaS providers** that want to offer customer-managed keys (BYOK
+  and HYOK) to their enterprise customers.
+- **Customers in regulated industries** that need to keep control over the keys
+  for their data in a provider's service.
+- **Platform teams** that need key management across many tenants, services and
+  regions.
+
+## Where to go next
+
+- [Core concepts](/overview/core-concept): tenants, systems, key types and the
+  key hierarchy.
+- [CMK](/overview/cmk) and [Krypton](/overview/krypton): what each component does.
+- [Trust model](/overview/trust-model): who holds which keys and who can revoke
+  access.
+- [Components](/components/): technical documentation, configuration and
+  security of each component.

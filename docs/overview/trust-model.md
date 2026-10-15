@@ -1,95 +1,112 @@
-# Sovereign Trust Model
+# Trust model
 
-## Executive Summary: The "Brain" and "Muscle" Architecture
+This page explains whom a customer has to trust when using OpenKCM: who holds
+which keys, who decides about their use, how access to the platform is checked,
+and what happens when a customer withdraws a key.
 
-In traditional cloud security, the service that *stores* your data usually holds the *keys* to that data. This creates a "concentration of risk"—if the provider is compromised or subpoenaed, your data is vulnerable.
+## Principles
 
-OpenKCM resolves this by enforcing a strict **Separation of Duties**. We architecturally separate the **Governance Plane (The Brain)** from the **Execution Plane (The Muscle)**. This ensures that policy decisions are centralized and auditable, while cryptographic operations are distributed and fast.
+1. **The customer controls the key.** Every tenant key is managed through CMK
+   under the tenant's own roles; HYOK keys stay in the customer's own keystore.
+2. **Governance is separated from key material.** CMK decides and records; the
+   keystore holds the key material and performs key operations.
+3. **Tenants are isolated.** Each tenant has its own keys, identity provider,
+   roles and data.
+4. **Least privilege and separation of duties.** Administration, key management
+   and auditing are separate roles; sensitive changes can require approval.
+5. **Everything is traceable.** Key changes, system changes, logins and
+   rejected requests are recorded as audit events.
 
-### The High-Level Architecture
-The diagram below illustrates how OpenKCM isolates governance from execution.
+## Who holds what
+
+| Party | Holds | Can |
+| --- | --- | --- |
+| Customer | HYOK keys in their own keystore; their identity provider and directory | Disable or delete HYOK keys in their keystore; decide who belongs to which group |
+| Tenant users in CMK | Their role in the tenant | Create, import, link, enable, disable and delete keys; link systems; approve changes |
+| CMK | Key references, metadata, policies, roles, workflow state | Instruct keystores through plugins; inform systems of changes. Never holds key material |
+| Keystore | Key material | Perform key operations |
+| CMK-Krypton bridge | The mapping of CMK's keys to Krypton keys | Create and update keys in Krypton on behalf of CMK |
+| Krypton (pre-production) | Sealed key material of key hierarchies | Generate keys and deliver them to authorized workloads |
+| Systems of the cloud service | The keys they are allowed to use | Encrypt and decrypt the tenant's data |
+
+## Key ownership and revocation
+
+| Key type | Key material | How the customer withdraws access |
+| --- | --- | --- |
+| System-managed | Generated in the keystore provided for the tenant | A key administrator disables or deletes the key in CMK |
+| BYOK | Provided by the customer, imported into the keystore provided for the tenant | A key administrator disables or deletes the key in CMK. The customer keeps their own copy of the material |
+| HYOK | Generated and kept in the customer's own keystore | The customer disables the key in their own keystore, or a key administrator disables it in CMK |
+
+When a key is disabled:
+
+1. CMK registers the change. For a HYOK key disabled in the customer's
+   keystore, CMK notices it at its next check, every five minutes by default.
+1. CMK sends the change to every system linked to the key, in every region.
+1. Each system stops using the key. How quickly that takes effect depends on the
+   system and how it caches keys.
+
+For HYOK keys, the keystore itself refuses further operations as soon as the
+customer disables the key, independent of OpenKCM.
+
+## Key hierarchy
+
+In the target architecture, the customer key is the root of trust of a key
+hierarchy. Each key protects the keys below it, so withdrawing the customer key
+makes every key below it unusable:
+
+```mermaid
+flowchart TB
+    subgraph Keystore["Keystore"]
+        L1["L1 – Customer key"]
+    end
+    subgraph Krypton["Krypton"]
+        L2["L2 – Tenant key"]
+        L3["L3 – Service key"]
+    end
+    subgraph Workload["Workload"]
+        L4["L4 – Data encryption key"]
+    end
+    L1 -- "protects" --> L2
+    L2 -- "protects" --> L3
+    L3 -- "protects" --> L4
+```
+
+| Part | Status |
+| --- | --- |
+| L1 customer keys managed through CMK, with propagation to systems | Available |
+| Key hierarchies with sealing in Krypton | Pre-production |
+| CMK creating the L2 to L4 keys in Krypton through the CMK-Krypton bridge | Early stage |
+| L1 protecting the Krypton hierarchy | Not yet available |
+| Key delivery to workloads over KMIP | Pre-production |
+
+## Access to the platform
+
+Every request to CMK passes several independent checks:
+
+1. **Sign-in.** Users sign in with their tenant's identity provider through
+   Session Manager. Technical clients use tokens or client certificates.
+1. **Gateway check.** ExtAuthZ checks the session, token or certificate and the
+   access policies, and signs a short-lived statement about the caller.
+1. **Authorization.** CMK verifies that statement, maps the caller's groups to a
+   role, and checks that the role may perform the operation in that tenant.
+
+The [request walkthrough](/components/cmk/security/walkthrough) shows these steps
+in detail.
+
+## Target architecture
+
+The diagram shows the target architecture of OpenKCM: CMK as the governance
+control plane, Krypton as the execution plane, and gateways close to the
+workloads. Parts of it are not implemented yet; the status tables above and the
+[component documentation](/components/) describe what is available today.
 
 <ZoomImage
 src="/architecture/high-level-architecture.png"
-alt="High Level Architecture"
+alt="Target architecture of OpenKCM"
 />
 
-**Strategic Components:**
+## See also
 
-* **The Brain: OpenKCM CMK (Governance Control Plane)**
-    * **Role:** The Policy Maker. It manages *who* can access a key, but it never performs encryption itself.
-    * **Business Value:** It holds the "Pointer" to your external Hardware Root of Trust (L1). It acts as a **Kill Switch**. If you delete the pointer here, the entire downstream system stops working instantly.
-    * **Integration:** Connects to your corporate Identity Provider (IdP) and outputs audit logs to your SIEM, ensuring compliance visibility.
-
-* **The Muscle: OpenKCM Crypto / Krypton (Execution Plane)**
-    * **Role:** The Factory. It performs the heavy lifting of encryption (Wrapping/Unwrapping) using keys temporarily loaded into secure memory.
-    * **Business Value:** It is distributed regionally (e.g., US-East, EU-Central). This ensures that data processing happens close to your applications for maximum speed, while strictly adhering to the policies defined by the Brain.
-
-* **The Edge: Krypton Gateway**
-    * **Role:** The Delivery Agent. Runs directly inside your application environment (Kubernetes/VPC).
-    * **Business Value:** Provides "Hyperscale" performance by handling high-volume requests locally, only contacting the regional core for security validation.
-
-
-## The Pyramid of Trust: 4-Layer Key Hierarchy
-
-To balance **Sovereignty** (Customer Control) with **Scale** (Cloud Speed), OpenKCM uses a layered "Envelope Encryption" model. This pyramid structure ensures that the customer retains ultimate authority without needing to approve every single database transaction.
-
-### The Cryptographic Hierarchy
-The diagram below details the L1-L4 dependency tree and the Ownership Models (BYOK/HYOK).
-
-<ZoomImage
-src="/architecture/key-chain-representation.png"
-alt="Key Chain Representation"
-/>
-
-**The Layers Explained:**
-
-* **L1 Keys (The Sovereign Anchor):**
-    * **Owner:** **YOU (The Customer).**
-    * **Location:** Your external KMS (AWS, Azure, GCP) or On-Premise HSM (Thales, Entrust).
-    * **Function:** This is the root of the pyramid. OpenKCM never sees this key; we only ask permission to use it. If you revoke this key in your own console, the entire pyramid collapses, creating a "Cryptographic Lockout."
-
-* **L2 & L3 Keys (The Intermediaries):**
-    * **Owner:** OpenKCM (Managed on your behalf).
-    * **Location:** Encrypted in the Regional Vault; active only in Secure Memory.
-    * **Function:** These layers facilitate multi-tenancy. They allow us to isolate "Tenant A" from "Tenant B" and "Payment Service" from "Audit Service." They are cryptographically derived from your L1.
-
-* **L4 Keys (The Data Keys):**
-    * **Owner:** The Application / Gateway.
-    * **Location:** Stored alongside your data (Database/Object Storage).
-    * **Function:** These are the disposable, high-speed keys that encrypt actual files and records. They are generated locally for speed but are useless without the L3 key to unlock them.
-
-**Supported Ownership Models:**
-* **BYOK (Bring Your Own Key):** Link an L1 from AWS/Azure/GCP.
-* **HYOK (Hold Your Own Key):** Keep the L1 in an on-premise HSM for maximum regulatory shielding.
-
-## Operational Mechanics: The Chain of Custody
-
-How do we ensure that a key is never exposed? The flow of trust relies on **Recursive Unsealing**. A lower-level key can only be decrypted if the level above it is active and authorized.
-
-### The Unsealing Flow
-The diagram below visualizes the technical flow of "Wrapping" and "Unwrapping" as data moves from the central store to the edge service.
-
-
-<ZoomImage
-src="/architecture/key-chain-flow.png"
-alt="Key Chain Flow"
-/>
-
-**The Trust Workflow:**
-
-1.  **The Handshake (Top-Down):** When a region boots up, the **Krypton Core** contacts the **CMK** to locate the customer's L1. It then authenticates with the external provider (e.g., AWS KMS) to unseal the **L2 Tenant Key**.
-2.  **The Derivation (Internal):** Once the L2 is in memory, the Core uses it to unlock the specific **L3 Service Keys** needed for that session.
-3.  **The Transaction (Bottom-Up):**
-    * The **Client App** (Service) requests an operation via the **Krypton Gateway**.
-    * The Gateway generates an **L4 Key** locally.
-    * The Gateway sends the L4 key to the Core to be "Wrapped" (Encrypted) by the L3.
-    * **Result:** The application gets a secured key to write data, but the "Master Key" (L3) never left the secure Core.
-
-## Summary of Business Benefits
-
-By adopting this architecture, organizations achieve three critical goals:
-
-1.  **Risk Reduction:** Compromising the "Edge" (Gateway) does not compromise the "Root" (L1/L2). The blast radius is contained.
-2.  **Regulatory Compliance:** The strict L1-L4 hierarchy provides a clear, auditable chain of custody that satisfies GDPR, HIPAA, and Sovereignty requirements.
-3.  **Operational Agility:** Developers get a standard API (KMIP) that works everywhere, while Security teams retain a global "Kill Switch" to protect the enterprise.
+- [Core concepts](/overview/core-concept)
+- [CMK security architecture](/components/cmk/security/)
+- [CMK hardening checklist](/components/cmk/security/hardening)
