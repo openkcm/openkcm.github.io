@@ -26,6 +26,10 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
+    outputs:
+      # One artifact name per run attempt. A re-run uploads a new artifact into
+      # the same run, and deploy-pages fails if two artifacts share a name.
+      artifact_name: github-pages-${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -49,6 +53,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
+          name: github-pages-${{ github.run_attempt }}
           path: docs/.vitepress/dist
         if: github.event_name != 'pull_request' # Skip upload on PRs
 
@@ -65,3 +70,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          # From the build job, so that "Re-run failed jobs" deploys the
+          # artifact of the attempt whose build is reused.
+          artifact_name: ${{ needs.build.outputs.artifact_name }}
