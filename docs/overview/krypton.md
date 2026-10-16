@@ -50,12 +50,12 @@ fetch their keys over KMIP. No CMK installation is needed.
 ## Krypton with CMK
 
 [CMK](/overview/cmk) uses Krypton for its cryptographic key operations. The
-**CMK-Krypton bridge**, a CMK service, receives CMK's key tasks and creates the
+**CMK-2-Krypton Bridge**, a CMK service, receives CMK's key tasks and creates the
 tenant, service and data keys in Krypton:
 
 ```mermaid
 flowchart LR
-    C["CMK"] -- "key tasks" --> B["CMK-Krypton bridge"]
+    C["CMK"] -- "key tasks" --> B["CMK-2-Krypton Bridge"]
     B -- "gRPC" --> K["Krypton"]
     W["Workloads"] -- "KMIP" --> K
 ```

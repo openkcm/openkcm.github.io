@@ -48,7 +48,7 @@ How they relate:
 - **CMK uses Krypton.** CMK governs the customer keys; the cryptographic keys
   below them, which protect the data, are created and operated by Krypton. CMK
   therefore requires Krypton for its cryptographic key operations, and drives it
-  through the **CMK-Krypton bridge**, a CMK service that turns CMK's decisions
+  through the **CMK-2-Krypton Bridge**, a CMK service that turns CMK's decisions
   into Krypton requests.
 - **Krypton stands on its own.** Krypton does not depend on CMK. It can be
   deployed and used independently by any workload that needs managed key
@@ -64,7 +64,7 @@ flowchart TB
     subgraph CMK["CMK"]
         direction LR
         CMKS["CMK services<br/>governance of customer keys"]
-        BR["CMK-Krypton bridge"]
+        BR["CMK-2-Krypton Bridge"]
     end
     TKS["Tenant keystores<br/>(for example AWS KMS)"]
     subgraph KRY["Krypton"]
@@ -91,7 +91,7 @@ flowchart TB
 | Roles, approval workflows and audit events | Available |
 | Propagation of key changes to the systems of each region | Available |
 | Key hierarchies, key storage and key delivery over KMIP (Krypton) | Pre-production |
-| CMK using Krypton through the CMK-Krypton bridge | Early stage |
+| CMK using Krypton through the CMK-2-Krypton Bridge | Early stage |
 | Customer key protecting the Krypton key hierarchy | Not yet available |
 | Gateway components running next to the workloads | Not yet available |
 

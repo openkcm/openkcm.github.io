@@ -1,12 +1,12 @@
-# CMK-Krypton bridge
+# CMK-2-Krypton Bridge
 
-The CMK-Krypton bridge is the CMK service that connects CMK to
+The CMK-2-Krypton Bridge is the CMK service that connects CMK to
 [Krypton](/components/krypton/). CMK relies on Krypton for its cryptographic key
 operations: the bridge turns CMK operations, such as creating, enabling,
 disabling and deleting keys, into Krypton requests, so that a customer's
 decisions in CMK are enforced in Krypton as well.
 
-Repository: [openkcm/cmk-krypton-bridge](https://github.com/openkcm/cmk-krypton-bridge)
+Repository: [openkcm/CMK-2-Krypton-bridge](https://github.com/openkcm/cmk-krypton-bridge)
 
 ::: warning Early stage
 The bridge is under active development. See [Current state](#current-state).
@@ -16,7 +16,7 @@ The bridge is under active development. See [Current state](#current-state).
 
 ```mermaid
 flowchart LR
-    C["CMK<br/>event reconciler"] -- "key and system tasks<br/>(Orbital over AMQP)" --> B["CMK-Krypton bridge"]
+    C["CMK<br/>event reconciler"] -- "key and system tasks<br/>(Orbital over AMQP)" --> B["CMK-2-Krypton Bridge"]
     B -- "gRPC" --> K["Krypton<br/>root server"]
     B -- "register systems (gRPC)" --> R["Registry"]
     B --- DB[("PostgreSQL<br/>jobs and managed keys")]
@@ -55,7 +55,7 @@ same keys.
 | CLI `cmk2kryptonctl` | - | `health`, `ensure-hierarchy`, `list-keys` against the gRPC API |
 
 ```bash
-cmk2kryptonctl --addr=cmk-krypton-bridge:9092 ensure-hierarchy \
+cmk2kryptonctl --addr=CMK-2-Krypton-bridge:9092 ensure-hierarchy \
   --tenant-id=acme --service-id=payments --level=L4
 ```
 

@@ -78,7 +78,7 @@ export default withMermaid({
             {text: 'Registry', link: '/components/cmk/registry'},
             {text: 'ExtAuthZ', link: '/components/cmk/extauthz'},
             {text: 'Session Manager', link: '/components/cmk/session-manager'},
-            {text: 'CMK-Krypton bridge', link: '/components/cmk/krypton-bridge'},
+            {text: 'CMK-2-Krypton Bridge', link: '/components/cmk/krypton-bridge'},
             {text: 'Plugins', link: '/components/cmk/plugins'},
           ]
         },

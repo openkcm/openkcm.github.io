@@ -5,7 +5,7 @@ Tenants use it to manage their keys in their own keystores, link the keys to
 the systems that use them, and control who may do what. CMK consists of six
 services, plugins and shared libraries. For its cryptographic key operations,
 CMK requires [Krypton](/components/krypton/), which it drives through the
-CMK-Krypton bridge.
+CMK-2-Krypton Bridge.
 
 This section describes what each service does, based on its source code, how
 the services work together, and how to configure and secure them.
@@ -19,7 +19,7 @@ the services work together, and how to configure and secure them.
 | [Registry](/components/cmk/registry) | Global registry of tenants and the systems they own | [registry][registry] |
 | [ExtAuthZ](/components/cmk/extauthz) | Authenticates every API request, evaluates Cedar policies, signs client data | [extauthz][extauthz] |
 | [Session Manager](/components/cmk/session-manager) | OIDC login, browser sessions and per-tenant identity provider trust | [session-manager][sm] |
-| [CMK-Krypton bridge](/components/cmk/krypton-bridge) | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [cmk-krypton-bridge][bridge] |
+| [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [CMK-2-Krypton-bridge][bridge] |
 
 ## How the services work together
 
@@ -38,7 +38,7 @@ flowchart LR
     CMK -- "OIDC trust (gRPC)" --> SM
     Registry["Registry"] -- "tenant jobs (Orbital / AMQP)" --> CMK
     CMK -- "tasks (Orbital / AMQP)" --> Systems["Regional systems"]
-    CMK -- "key tasks (Orbital / AMQP)" --> Bridge["CMK-Krypton bridge"]
+    CMK -- "key tasks (Orbital / AMQP)" --> Bridge["CMK-2-Krypton Bridge"]
     Bridge -- "gRPC" --> Krypton["Krypton"]
 ```
 
@@ -51,7 +51,7 @@ flowchart LR
   operations run in the keystores through plugins.
 - The **Registry** onboards tenants and sends them to the CMK of their region.
   CMK propagates key and system changes to the regional systems.
-- The **CMK-Krypton bridge** receives CMK's key tasks and creates and updates
+- The **CMK-2-Krypton Bridge** receives CMK's key tasks and creates and updates
   the corresponding keys in [Krypton](/components/krypton/), which CMK requires
   for its cryptographic key operations.
 

@@ -11,7 +11,7 @@ releases and documentation.
 ```mermaid
 flowchart LR
     subgraph CMK["CMK"]
-        S["CMK services"] -- "key tasks" --> B["CMK-Krypton bridge"]
+        S["CMK services"] -- "key tasks" --> B["CMK-2-Krypton Bridge"]
     end
     subgraph KR["Krypton"]
         K["Krypton root server"]
@@ -21,7 +21,7 @@ flowchart LR
 ```
 
 - **CMK requires Krypton** for its cryptographic key operations. It drives
-  Krypton through the [CMK-Krypton bridge](/components/cmk/krypton-bridge), a
+  Krypton through the [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge), a
   CMK service.
 - **Krypton is independent.** It does not depend on CMK and can be deployed and
   used on its own.
@@ -29,7 +29,7 @@ flowchart LR
 ## CMK
 
 CMK consists of the services CMK, CMK UI, Registry, ExtAuthZ, Session Manager
-and the CMK-Krypton bridge, plus plugins for keystores and identity management.
+and the CMK-2-Krypton Bridge, plus plugins for keystores and identity management.
 [Go to the CMK documentation](/components/cmk/).
 
 ## Krypton

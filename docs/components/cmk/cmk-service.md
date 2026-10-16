@@ -63,7 +63,7 @@ by a feature flag.
 
 CMK sends changes to the systems in each region as tasks, using
 [Orbital](/components/cmk/registry#orbital) over AMQP. In a deployment with
-Krypton, the [CMK-Krypton bridge](/components/cmk/krypton-bridge) receives the
+Krypton, the [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) receives the
 tasks of its region and carries them out in Krypton.
 
 | Task | Purpose |

@@ -61,7 +61,7 @@ flowchart TB
 ::: info Current state
 CMK manages the L1 keys and informs the systems that use them. Krypton
 implements the levels below with a configurable hierarchy. CMK drives Krypton
-through the CMK-Krypton bridge, which creates the L2 to L4 keys of a tenant and
+through the CMK-2-Krypton Bridge, which creates the L2 to L4 keys of a tenant and
 service in Krypton; the bridge is at an early stage. Protecting the L2 key with
 the tenant's L1 key is not implemented yet.
 :::
@@ -75,7 +75,7 @@ keys and holds their material:
 | --- | --- |
 | Decides who may use which key, records approvals and audit events | CMK |
 | Holds key material and performs key operations | The keystore (for L1), Krypton (for lower levels) |
-| Translates CMK's decisions into Krypton operations | CMK-Krypton bridge |
+| Translates CMK's decisions into Krypton operations | CMK-2-Krypton Bridge |
 | Uses keys to encrypt data | The systems of the cloud service |
 
 CMK never stores key material. For BYOK, the wrapped material passes through CMK

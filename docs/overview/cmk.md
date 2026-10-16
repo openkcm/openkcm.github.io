@@ -8,7 +8,7 @@ lifecycle, with roles, approvals and audit events for every change.
 CMK manages metadata and policy. The customer keys stay in a keystore, and their
 key operations are performed there. For the cryptographic keys below the
 customer keys, which protect the data, CMK requires
-[Krypton](/overview/krypton): the **CMK-Krypton bridge** turns CMK's decisions,
+[Krypton](/overview/krypton): the **CMK-2-Krypton Bridge** turns CMK's decisions,
 such as creating, enabling, disabling or deleting a key, into Krypton
 operations.
 
@@ -25,7 +25,7 @@ operations.
 | Roles | Separate tenant administrators, key administrators and auditors |
 | Approvals | Require approval by other users for sensitive key operations |
 | Audit | Record key, system, login and access events for the customer's logging infrastructure |
-| Cryptographic keys | Have Krypton create and operate the key hierarchy of each tenant and service, through the CMK-Krypton bridge |
+| Cryptographic keys | Have Krypton create and operate the key hierarchy of each tenant and service, through the CMK-2-Krypton Bridge |
 
 ## Key types
 
@@ -63,7 +63,7 @@ flowchart LR
     C -- "directory plugins" --> Dir["Tenant directory"]
     R["Registry"] -- "tenants" --> C
     C -- "key and system changes" --> S["Systems in each region"]
-    C -- "key tasks" --> BR["CMK-Krypton bridge"]
+    C -- "key tasks" --> BR["CMK-2-Krypton Bridge"]
     BR -- "key operations" --> KR["Krypton"]
 ```
 
@@ -74,7 +74,7 @@ flowchart LR
 | Registry | Global registry of tenants and systems |
 | Session Manager | Sign-in with the tenant's identity provider |
 | ExtAuthZ | Checks every API request at the gateway |
-| CMK-Krypton bridge | Turns CMK's key decisions into Krypton operations (early stage) |
+| CMK-2-Krypton Bridge | Turns CMK's key decisions into Krypton operations (early stage) |
 
 Keystores and user directories connect through plugins. Today CMK includes a
 plugin for AWS KMS and plugins for SCIM directories; further keystores can be
