@@ -10,11 +10,25 @@ responsibilities are split.
 | --- | --- |
 | Tenant | A customer of the cloud service. Each tenant has its own keys, users, identity provider and data, isolated from other tenants |
 | System | A service instance of the cloud service in a region that uses a tenant's key, for example a database service of that tenant |
-| Region | A location where systems run. Key changes are propagated to the systems of each region |
+| CMK region | A regional deployment of CMK. Each tenant belongs to exactly one CMK region, which keeps its keys, users and data |
+| System region | A location where systems run. Key changes are propagated to the systems of each system region |
 | Keystore | Where key material lives and key operations happen, for example an AWS KMS account |
 
-A tenant links its systems to its keys. When a key changes, for example when it
-is disabled or gets a new version, every system linked to it is informed.
+Tenants and systems are registered centrally, in the **Registry**: the platform
+registers each tenant with the CMK region that serves it, and the cloud services
+register their systems and map them to tenants. The tenant's users then work in
+the CMK of their region, where they link their systems to their keys. When a key
+changes, for example when it is disabled or gets a new version, every system
+linked to it is informed.
+
+```mermaid
+flowchart TB
+    R["Registry (central)<br/>all tenants and systems"]
+    R -- "tenants of emea" --> E["CMK region emea<br/>keys, users and data<br/>of its tenants"]
+    R -- "tenants of us" --> U["CMK region us<br/>keys, users and data<br/>of its tenants"]
+    E -- "key changes" --> S1["Systems in eu10, eu20"]
+    U -- "key changes" --> S2["Systems in us10"]
+```
 
 ## Key types
 

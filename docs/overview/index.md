@@ -2,9 +2,16 @@
 
 **OpenKCM** (Open Key Chain Manager) is an open-source key management platform
 for cloud services. It lets the customers of a cloud service keep control over
-the keys that protect their data: the keys are kept in a keystore dedicated to
-the customer, or in the customer's own keystore, and the customer decides when
-they may be used.
+the keys that protect their data, whether the data is stored (at rest) or sent
+between services (in transit): the keys are kept in a keystore dedicated to the
+customer, or in the customer's own keystore, and the customer decides when they
+may be used.
+
+One key can protect the data of many services. The customer connects each of
+their services to a key. When they disable that key, every service that shares
+it is informed and stops using it; when a new key version is created, all of
+them switch to it. Each service decides how it uses the key, for example to
+encrypt the data it stores or the data it sends.
 
 ## Why OpenKCM
 
@@ -22,8 +29,10 @@ OpenKCM gives a cloud service the building blocks to offer this control:
 - **Governance without key material.** The control plane manages metadata,
   permissions and policies. Key operations run in the keystore that holds the
   key.
-- **Multi-tenant and multi-region.** Each tenant has its own keys, identity
-  provider and data; key changes are propagated to the systems of each region.
+- **Multi-tenant and multi-region.** A central Registry knows every tenant and
+  the region that serves it. Each region runs its own CMK deployment, which
+  keeps the keys, identity provider settings and data of its tenants. Key
+  changes are propagated to the systems of each region.
 - **Separation of duties.** Tenant administrators, key administrators and
   auditors have different, non-overlapping roles; sensitive changes can require
   approval by several people.
@@ -121,3 +130,4 @@ Or go straight to your task:
 | A customer managing keys in CMK | [Manage your keys](/components/cmk/guide/) |
 | Building a cloud service that uses customer keys | [Connect a regional system](/components/cmk/system-integration) |
 | Operating the platform | [Deployment planning](/components/cmk/deployment) |
+| Onboarding customers as tenants | [Connect a regional tenant](/components/cmk/tenant-integration) |

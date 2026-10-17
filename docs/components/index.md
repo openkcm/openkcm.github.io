@@ -30,6 +30,8 @@ flowchart LR
 
 CMK consists of the services CMK, CMK UI, Registry, ExtAuthZ, Session Manager
 and the CMK-2-Krypton Bridge, plus plugins for keystores and identity management.
+The Registry runs once, in a central deployment, and registers all tenants and
+systems; the other services run in one regional deployment per CMK region.
 [Go to the CMK documentation](/components/cmk/).
 
 ## Krypton

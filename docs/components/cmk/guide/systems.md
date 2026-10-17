@@ -93,6 +93,7 @@ name, identifier or region. Through the API, `GET .../systems` supports
 
 ## See also
 
+- [Your tenant](/components/cmk/guide/tenant)
 - [Key configurations](/components/cmk/guide/key-configurations)
 - [Approvals](/components/cmk/guide/approvals)
 - [Connect a regional system](/components/cmk/system-integration): for the teams

@@ -6,6 +6,12 @@ by step: secrets, identity provider, [Session Manager](/components/cmk/session-m
 Gateway, and finally a tenant. It follows a reference deployment on Kubernetes
 with Envoy Gateway, Helm and a service mesh.
 
+Steps 1 to 7 set up **one regional deployment**; repeat them for every CMK
+region, each with its own hosts, secrets and databases. The central Registry is
+installed once; see [Deployment planning](/components/cmk/deployment#installation-order)
+and the [Registry configuration reference](/components/cmk/security/registry-config).
+Step 8 registers a tenant in the Registry for one of the regions.
+
 Every setting is described in detail in the
 [ExtAuthZ configuration reference](/components/cmk/security/extauthz-config), the
 [Session Manager configuration reference](/components/cmk/security/session-manager-config)
@@ -17,8 +23,9 @@ Replace these placeholders:
 
 | Placeholder | Meaning |
 | --- | --- |
-| `api.example.com` | Public host of the API gateway. Serves the CMK API and the Session Manager endpoints |
-| `ui.example.com` | Public host of the CMK UI |
+| `api.example.com` | Public host of the region's API gateway. Serves the CMK API and the Session Manager endpoints |
+| `ui.example.com` | Public host of the region's CMK UI |
+| `emea` | CMK region of this regional deployment |
 | `example.com` | Parent domain of both hosts |
 | `https://idp.example.com/realms/acme` | Issuer of the tenant's identity provider |
 | `acme` | Tenant ID |
@@ -43,7 +50,8 @@ flowchart LR
 | Component | Namespace in the reference deployment | Ports |
 | --- | --- | --- |
 | Envoy Gateway, ExtAuthZ | `envoy-gateway-system` | ExtAuthZ: gRPC 9092, status 8080 |
-| Session Manager, CMK, Registry, CMK UI | `services` | Session Manager: HTTP 8080, gRPC 9091, status 8888. CMK: HTTP 8081 |
+| Session Manager, CMK, CMK UI | `services` | Session Manager: HTTP 8080, gRPC 9091, status 8888. CMK: HTTP 8081 |
+| Registry (central deployment) | `services` of the central cluster | gRPC 9092, status 8888. Reached by CMK at `registry.services.svc.cluster.local:9092` in the examples |
 | Valkey | `storage` | 6379 |
 
 ### Settings that must match
@@ -246,7 +254,9 @@ kubectl -n services create secret generic cmk-client-data-public-keys \
 
 Also create, in `services`, the secrets for Session Manager's database and
 Valkey credentials and for its client credentials at the identity providers
-(client secret, or client certificate and key).
+(client secret, or client certificate and key), and CMK's database credentials
+and AMQP client certificate (`cmk-database`, `cmk-rabbitmq-client` and
+`rabbitmq-ca` in [Step 5](#step-5-configure-cmk)).
 
 ::: warning
 The two `csrf-secret` Secrets must always hold the same value. Nothing keeps
@@ -411,8 +421,9 @@ Notes:
 - `sessionManager.csrfSecret` must be **the same secret as ExtAuthZ's
   `csrfSecret`** (Step 4). Mount the `csrf-secret` Secret created from the same
   file in Step 1. See [Shared CSRF secret](#shared-csrf-secret).
-- Do not set `nameOverride`; Session Manager reads its configuration only from
-  `/etc/session-manager`.
+- Session Manager reads its configuration only from `/etc/session-manager`.
+  Chart 0.11.0 and later always mount it there; with older charts, do not set
+  `nameOverride`.
 - `clientAuth.clientID` is required by the migration job even though each
   tenant's client ID comes from its trust record.
 - The client secret or certificate is the same for all tenants.
@@ -616,17 +627,15 @@ kubectl -n envoy-gateway-system rollout restart deployment/extauthz
 ## Step 5: Configure CMK
 
 CMK runs several processes from one image: API server, tenant manager, event
-reconciler, task scheduler and task worker. Their security-relevant settings:
+reconciler, task scheduler and task worker. The chart deploys all of them, starts
+each with its subcommand, and gives each a ConfigMap with the sections of
+`config` that it reads. The chart's `values.yaml` documents every key under
+`config`, with its default and the processes that read it. The
+security-relevant settings:
 
 ```yaml
-apiServer:
-  deploy: true
-  image: { command: /cmkd, args: [api-server] }
-tenantManager:
-  deploy: true
-  image: { command: /cmkd, args: [tenant-manager] }
-eventReconciler:
-  image: { command: /cmkd, args: [event-reconciler] }
+image:
+  tag: v0.11.0
 
 config:
   logger:
@@ -661,7 +670,7 @@ config:
         mode: verify-full
         rootCert: /etc/credentials/database/ca.crt
 
-  tenantManager:                # tenant jobs from the Registry, including ApplyAuth
+  tenantManager:                # tenant jobs from the central Registry for region emea
     secretRef:
       type: mtls
       mtls:
@@ -678,6 +687,8 @@ config:
       type: IdentityManagementService
       yamlConfiguration: |
         # SCIM directory of the tenants
+    # plus the keystore plugins, and the NotificationService and
+    # SystemInformationService plugins that the task worker requires
 
   audit:
     endpoint: https://otel-collector.example.com/v1/logs
@@ -685,9 +696,21 @@ config:
 extraVolumes:
   - name: client-data-public-keys
     secret: { secretName: cmk-client-data-public-keys }
+  - name: database
+    secret: { secretName: cmk-database }        # username, password, ca.crt
+  - name: rabbitmq
+    secret: { secretName: cmk-rabbitmq-client } # tls.crt, tls.key
+  - name: rabbitmq-ca
+    secret: { secretName: rabbitmq-ca }         # ca.crt
 extraVolumeMounts:
   - { name: client-data-public-keys, mountPath: /etc/signing-keys, readOnly: true }
+  - { name: database, mountPath: /etc/credentials/database, readOnly: true }
+  - { name: rabbitmq, mountPath: /etc/credentials/rabbitmq, readOnly: true }
+  - { name: rabbitmq-ca, mountPath: /etc/credentials/rabbitmq-ca, readOnly: true }
 ```
+
+The task queue (`scheduler.taskQueue`), the event reconciler targets
+(`eventProcessor`) and the plugins are required as well; see below.
 
 - `signingKeysPath` holds ExtAuthZ's **public** keys, named like ExtAuthZ's
   private keys (`key1.pem`). CMK uses the file name without `.pem` as the key ID
@@ -700,6 +723,11 @@ extraVolumeMounts:
 - Use `amqps://` for the broker. With `amqp://`, CMK connects without TLS even
   when `secretRef.type` is `mtls`.
 - `extraVolumes` are mounted into all CMK pods, including the migration Jobs.
+  Keep every password, key and token in a mounted Secret (`source: file`):
+  embedded values are stored in plain text in the ConfigMaps.
+- Chart versions before 0.2.0 do not start the processes on their own: set
+  `<component>.image.command: /cmkd` and `image.args: [<subcommand>]` for every
+  component.
 
 All other sections, such as the task queue and the event reconciler targets,
 are described in the [CMK configuration reference](/components/cmk/security/cmk-config).
@@ -814,9 +842,9 @@ spec:
     allowCredentials: true
 ```
 
-Attach an equivalent `SecurityPolicy` with `extAuth` to the Registry's
-`GRPCRoute`. Every route to a CMK service, except the Session Manager routes,
-needs one.
+Every route to a CMK service, except the Session Manager routes, needs such a
+policy. If you publish the central Registry's API through a gateway, attach an
+equivalent `SecurityPolicy` with `extAuth` to its `GRPCRoute` there.
 
 ### Client certificates and path handling
 
@@ -855,9 +883,20 @@ certificate-based clients cannot authenticate.
 
 ## Step 8: Onboard a tenant
 
-A tenant's identity provider is registered with the Registry's `ApplyAuth`
+Register the tenant in the central Registry with the region of this deployment,
+and wait until its status is `STATUS_ACTIVE`; see
+[Register a tenant](/components/cmk/tenant-integration#step-1-register-the-tenant):
+
+```bash
+grpcurl -plaintext -d '{"id":"acme","name":"ACME Corporation","region":"emea","owner_id":"customer-4711","owner_type":"customer","role":"ROLE_LIVE"}' \
+  registry.services.svc.cluster.local:9092 kms.api.cmk.registry.tenant.v1.Service/RegisterTenant
+grpcurl -plaintext -d '{"id":"acme"}' registry.services.svc.cluster.local:9092 \
+  kms.api.cmk.registry.tenant.v1.Service/GetTenant
+```
+
+Then register the tenant's identity provider with the Registry's `ApplyAuth`
 call. The Registry passes it to the CMK of the tenant's region, and CMK writes
-the trust record in Session Manager.
+the trust record in that region's Session Manager.
 
 ```json
 {
@@ -873,8 +912,7 @@ the trust record in Session Manager.
 }
 ```
 
-The tenant must already be registered and active in the Registry. Send the
-request to `kms.api.cmk.registry.auth.v1.Service/ApplyAuth`, for example with
+The tenant must be active in the Registry. Send the request to `kms.api.cmk.registry.auth.v1.Service/ApplyAuth`, for example with
 `grpcurl` from a pod inside the service mesh, and check the result with
 `GetAuth`:
 

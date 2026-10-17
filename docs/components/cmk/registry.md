@@ -1,45 +1,93 @@
 # Registry and Orbital
 
-The Registry is the global source of truth for tenants and the systems they own.
-Orbital is the library that OpenKCM services use to send work to each other and
-track it until it is done.
+The Registry is the central source of truth for the **tenants** of a CMK
+installation and the **systems** of the cloud services that use their keys.
+It runs once, in the central deployment, and sends each tenant to the CMK of
+its region. Orbital is the library that OpenKCM services use to send work to
+each other and track it until it is done.
 
 ## Registry
 
 Repository: [openkcm/registry](https://github.com/openkcm/registry)
 
-The Registry keeps track of:
+```mermaid
+flowchart LR
+    Tool["Tenant onboarding<br/>tooling"] -- "register tenants,<br/>identity providers, limits" --> R
+    Svc["Cloud services"] -- "register systems,<br/>map them to tenants" --> R
+    subgraph Central["Central deployment"]
+        R["Registry"]
+    end
+    R -- "tenant jobs (Orbital / AMQP)" --> C1["CMK region emea"]
+    R -- "tenant jobs (Orbital / AMQP)" --> C2["CMK region us"]
+    C1 -- "systems, user groups,<br/>status (gRPC)" --> R
+    C2 -- "systems, user groups,<br/>status (gRPC)" --> R
+```
 
-- **Tenants**: registration, labels, user groups, and their status (active,
-  blocked or terminated).
-- **Systems**: the services that consume keys in a region, their status and
-  labels, and which tenant they are mapped to.
-- **Authentication settings** per tenant. The Registry sends them to CMK as an
-  Orbital job, and CMK applies them to
-  [Session Manager](/components/cmk/session-manager#tenant-trust).
+The Registry keeps:
 
-For each regional system, the Registry stores the ID of the system's L2 key and
-whether the system's L1 key has been claimed. It does not store key material.
+| Object | What the Registry holds | Registered by |
+| --- | --- | --- |
+| **Tenant** | ID, name, **region**, owner, role (live, test, trial), labels, user groups, status | Your tenant onboarding tooling |
+| **Authentication** | The tenant's identity provider settings: issuer, client ID, JWKS URI, audiences | Your tenant onboarding tooling |
+| **Tenant configuration** | Limit overrides for one tenant | Your tenant onboarding tooling |
+| **System** | External ID, type, the tenant it is mapped to; per system region its status, L2 key ID, labels and whether its L1 key is claimed | Your cloud services and the CMK-2-Krypton Bridge |
+
+It stores no key material.
+
+### Tenants
+
+A tenant is registered once, with the **region** of the CMK deployment that
+will serve it. Every change to a tenant is a job that the Registry sends to the
+CMK of that region and tracks until CMK answers:
+
+| Call | Job for CMK | Result in CMK |
+| --- | --- | --- |
+| `RegisterTenant` | Provision | Tenant, database schema and the groups `KMS_TenantAdministrator_<id>` and `KMS_TenantAuditor_<id>` are created |
+| `ApplyAuth`, `RemoveAuth` | Apply or remove the identity provider | The tenant's trust record in the region's Session Manager is written or removed |
+| `UpdateTenantConfig` | Update the tenant configuration | The tenant's limits are overridden |
+| `BlockTenant`, `UnblockTenant` | Block or unblock | The tenant's trust record is blocked or unblocked: while it is blocked, requests with a session of its users are rejected |
+| `TerminateTenant` | Terminate | Systems unlinked, keys detached, trust record, tenant and schema deleted |
+
+The tenant's status shows where a job stands: `PROVISIONING`, then `ACTIVE`;
+`BLOCKING`, then `BLOCKED`; and so on, with an `_ERROR` status when CMK failed
+the job. A tenant's region cannot be changed, and a terminated tenant's ID
+cannot be used again. [Connect a regional tenant](/components/cmk/tenant-integration)
+explains each call, the statuses and the errors.
+
+### Systems
+
+A system is an instance of a cloud service that uses a tenant's key, in one or
+more **system regions**. The cloud service registers it and maps it to a
+tenant; only mapped systems appear in the tenant's CMK. CMK reads the tenant's
+systems from the Registry and reports their status and L1 key claims back.
+[Connect a regional system](/components/cmk/system-integration) explains the
+registration.
 
 ### Registry API
 
 | gRPC service | Operations |
 | --- | --- |
 | Tenant | Register, get, list, block, unblock, terminate, labels, user groups |
+| Auth | Apply, get, list and remove a tenant's identity provider settings |
+| Tenant configuration | Get and update a tenant's limit overrides |
 | System | Register, list, delete, update status, update L1 key claim, labels |
-| Mapping | Map or unmap a system to a tenant |
-| Auth | Apply, get, list and remove a tenant's authentication settings |
+| Mapping | Map or unmap a system to a tenant, get a mapping |
 
-The API definitions are in [api-sdk](https://github.com/openkcm/api-sdk).
+The API definitions are in [api-sdk](https://github.com/openkcm/api-sdk). The
+API is gRPC only and does not authenticate its callers: allow only your
+onboarding tooling, your cloud services and the regional CMK deployments to
+reach it.
 
 Every setting of the Registry is described in the
 [Registry configuration reference](/components/cmk/security/registry-config).
 
-### Registry and CMK
+### Registry and the regional CMKs
 
-The Registry sends tenant jobs, such as onboarding a new tenant, to the CMK
-instance of the tenant's region through Orbital. CMK reports the result back the
-same way.
+The Registry has one Orbital **target** per CMK region, each with the AMQP
+queues of that region's CMK tenant manager. It sends a tenant's jobs to the
+target whose region equals the tenant's region. A tenant whose region has no
+target fails with `PROVISIONING_ERROR`. CMK does not check the region itself:
+make sure that each region's CMK reads the queues of its own target.
 
 ## Orbital
 

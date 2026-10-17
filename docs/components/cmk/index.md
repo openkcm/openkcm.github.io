@@ -18,6 +18,7 @@ who run it.
 | Manage keys, key configurations, systems or approvals in CMK | [Manage your keys](/components/cmk/guide/) |
 | Give users access to a tenant, or understand what each role may do | [Sign-in, groups and roles](/components/cmk/guide/access) |
 | Automate CMK through its REST API | [CMK API](/components/cmk/api) |
+| Onboard a customer: register the tenant for its region, connect its identity provider, block or terminate it | [Connect a regional tenant](/components/cmk/tenant-integration) |
 | Make your cloud service receive key changes from CMK | [Connect a regional system](/components/cmk/system-integration) |
 | Plan and install a CMK deployment | [Deployment planning](/components/cmk/deployment), then the [configuration guide](/components/cmk/security/configuration) |
 | Run, upgrade and troubleshoot CMK | [Operations](/components/cmk/operations) |
@@ -25,33 +26,51 @@ who run it.
 
 ## CMK services
 
-| Service | Role | Repository |
-| --- | --- | --- |
-| [CMK service](/components/cmk/cmk-service) | Governance control plane for customer keys: REST API, workflows, propagation to regions | [cmk][cmk] |
-| [CMK UI](/components/cmk/cmk-ui) | Web console for CMK | [cmk-ui][cmk-ui] |
-| [Registry](/components/cmk/registry) | Global registry of tenants and the systems they own | [registry][registry] |
-| [ExtAuthZ](/components/cmk/extauthz) | Authenticates every API request, evaluates Cedar policies, signs client data | [extauthz][extauthz] |
-| [Session Manager](/components/cmk/session-manager) | OIDC login, browser sessions and per-tenant identity provider trust | [session-manager][sm] |
-| [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [cmk-krypton-bridge][bridge] |
+CMK runs as one **central deployment** with the Registry, and one **regional
+deployment** per CMK region with the other services. Every tenant is
+registered in the Registry with a region and is served by that region's
+deployment. See [Deployment planning](/components/cmk/deployment#what-you-deploy).
+
+| Service | Deployment | Role | Repository |
+| --- | --- | --- | --- |
+| [Registry](/components/cmk/registry) | Central | Registers all tenants and their systems, and sends each tenant's jobs to the CMK of its region | [registry][registry] |
+| [CMK service](/components/cmk/cmk-service) | Regional | Governance control plane for the customer keys of the region's tenants: REST API, workflows, propagation to systems | [cmk][cmk] |
+| [CMK UI](/components/cmk/cmk-ui) | Regional | Web console for CMK | [cmk-ui][cmk-ui] |
+| [ExtAuthZ](/components/cmk/extauthz) | Regional | Authenticates every API request, evaluates Cedar policies, signs client data | [extauthz][extauthz] |
+| [Session Manager](/components/cmk/session-manager) | Regional | OIDC login, browser sessions and per-tenant identity provider trust | [session-manager][sm] |
+| [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) | Regional | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [cmk-krypton-bridge][bridge] |
 
 ## How the services work together
 
 ```mermaid
 flowchart LR
-    Browser["Browser"] --> UI["CMK UI"]
-    Browser -- "OIDC login" --> SM["Session Manager"]
+    Onb["Tenant onboarding"] -- "register tenants (gRPC)" --> Registry
+    subgraph Central["Central deployment"]
+        Registry["Registry"]
+    end
+    subgraph Regional["Regional deployment (one per CMK region)"]
+        UI["CMK UI"]
+        SM["Session Manager"]
+        Envoy["Envoy Gateway"]
+        ExtAuthZ["ExtAuthZ"]
+        CMK["CMK"]
+        Bridge["CMK-2-Krypton Bridge"]
+    end
+    Browser["Browser"] --> UI
+    Browser -- "OIDC login" --> SM
     SM -- "OIDC" --> IdP["Tenant IdP"]
-    Browser -- "API calls" --> Envoy["Envoy Gateway"]
+    Browser -- "API calls" --> Envoy
     Client["API client"] --> Envoy
-    Envoy -- "ext_authz (gRPC)" --> ExtAuthZ["ExtAuthZ"]
+    Envoy -- "ext_authz (gRPC)" --> ExtAuthZ
     ExtAuthZ -- "GetSession (gRPC)" --> SM
-    Envoy -- "REST + signed client data" --> CMK["CMK"]
+    Envoy -- "REST + signed client data" --> CMK
     CMK -- "keystore plugins" --> KMS["Customer keystore"]
     CMK -- "identity plugins (SCIM)" --> Dir["Customer directory"]
     CMK -- "OIDC trust (gRPC)" --> SM
-    Registry["Registry"] -- "tenant jobs (Orbital / AMQP)" --> CMK
-    CMK -- "tasks (Orbital / AMQP)" --> Systems["Regional systems"]
-    CMK -- "key tasks (Orbital / AMQP)" --> Bridge["CMK-2-Krypton Bridge"]
+    Registry -- "tenant jobs (Orbital / AMQP)" --> CMK
+    CMK -- "tenants and systems (gRPC)" --> Registry
+    CMK -- "tasks (Orbital / AMQP)" --> Systems["Systems"]
+    CMK -- "key tasks (Orbital / AMQP)" --> Bridge
     Bridge -- "gRPC" --> Krypton["Krypton"]
 ```
 
@@ -62,8 +81,11 @@ flowchart LR
   signed client data to the request.
 - **CMK** verifies the client data, authorizes the call and performs it. Key
   operations run in the keystores through plugins.
-- The **Registry** onboards tenants and sends them to the CMK of their region.
-  CMK propagates key and system changes to the regional systems.
+- The **Registry**, in the central deployment, registers every tenant with its
+  region, and the systems of the cloud services. It sends each tenant's jobs,
+  such as provisioning, blocking or its identity provider, to the CMK of the
+  tenant's region. See [Connect a regional tenant](/components/cmk/tenant-integration).
+- CMK propagates key and system changes to the systems of its tenants.
 - The **CMK-2-Krypton Bridge** receives CMK's key tasks and creates and updates
   the corresponding keys in [Krypton](/components/krypton/), which CMK requires
   for its cryptographic key operations.

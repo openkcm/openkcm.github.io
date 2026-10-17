@@ -70,8 +70,14 @@ certificate instead.
 
 ## Trust boundaries
 
-- **Edge**: only Envoy Gateway is exposed. It must route every request for CMK
-  and the Registry through ExtAuthZ.
+- **Edge**: in each region, only Envoy Gateway is exposed. It must route every
+  request for CMK through ExtAuthZ, and so must a gateway that publishes the
+  central Registry's API.
+- **Regions**: each regional deployment has its own ExtAuthZ, Session Manager,
+  CMK and databases, and holds only the tenants registered for its region. The
+  central Registry is the only service that all regions call; it has no
+  authentication of its own, so restrict it to the regional CMKs, your onboarding
+  tooling and your cloud services.
 - **Identity**: user identity comes from the tenant's own identity provider.
   Session Manager keeps one trust record per tenant (issuer, JWKS, audiences).
 - **Service**: CMK trusts only client data signed by ExtAuthZ, and only for its

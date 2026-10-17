@@ -43,14 +43,20 @@ Register each system with the Registry's `RegisterSystem` gRPC call, defined in
 | --- | --- |
 | `external_id` | Your identifier of the system. Keep it unique across all system types |
 | `type` | `SYSTEM` or `SUBACCOUNT`. CMK supports only these types |
-| `region` | The region the system runs in. It must be a region that CMK is configured for |
+| `region` | The **system region** the system runs in, for example `eu10`. The CMK of the tenant's region must have an `eventProcessor.targets` entry for it |
 | `l2key_id` | The identifier of the system's key below the customer key |
 | `status` | `STATUS_AVAILABLE` for a system that is ready |
 | `labels` | Optional key–value labels |
 
 The system must then be mapped to the customer's tenant (`MapSystemToTenant`),
 typically when your service is provisioned for that tenant. Only mapped systems
-appear in the customer's CMK.
+appear in the customer's CMK. The tenant must be active, and the system must be
+available and not mapped to another tenant.
+
+The Registry is central: register all systems there, whichever region they run
+in. The tenant was registered with a **CMK region**, and the CMK of that region
+reads the tenant's systems from the Registry and sends their tasks to your
+system region. See [Connect a regional tenant](/components/cmk/tenant-integration).
 
 ## Step 2: Receive tasks from CMK
 
@@ -179,10 +185,11 @@ Every task needs an answer. With Orbital, the handler sets one of these:
 
 ## Region configuration
 
-The platform operator configures one entry per region in CMK's
-[`eventProcessor.targets`](/components/cmk/security/cmk-config#eventprocessor),
-with the broker URL and the two addresses. Tasks for a system go to the entry
-whose region matches the system's region.
+The platform operator configures one entry per system region in the
+[`eventProcessor.targets`](/components/cmk/security/cmk-config#eventprocessor)
+of each regional CMK whose tenants have systems there, with the broker URL and
+the two addresses. Tasks for a system go to the entry whose region matches the
+system's region.
 
 | Error the customer sees | Cause |
 | --- | --- |
@@ -204,6 +211,8 @@ whose region matches the system's region.
 
 ## See also
 
+- [Connect a regional tenant](/components/cmk/tenant-integration): how tenants
+  are registered for their CMK region
 - [Systems](/components/cmk/guide/systems): what the customer sees
 - [Registry](/components/cmk/registry)
 - [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge): the CMK service that

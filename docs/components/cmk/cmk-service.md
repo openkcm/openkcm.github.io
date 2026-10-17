@@ -16,6 +16,8 @@ Repository: [openkcm/cmk](https://github.com/openkcm/cmk)
 - Link systems (the services that consume a key in a region) to a key, switch
   them to another key, or unlink them.
 - Propagate key and system changes to the regional systems.
+- Serve the tenants of its CMK region: one CMK runs in each regional deployment
+  and receives its tenants from the central [Registry](/components/cmk/registry).
 - Run approval workflows for sensitive operations.
 - Verify the [signed client data](/components/cmk/security/client-data#cmk-verification)
   that ExtAuthZ adds to every API request, with ExtAuthZ's public keys from
@@ -116,7 +118,10 @@ that calls the CMK REST API. Users sign in through
 
 ## Deployment
 
-CMK ships as a Helm chart. The container image includes the keystore plugins.
+CMK ships as a Helm chart, in the `charts/cmk` directory of the
+[cmk repository](https://github.com/openkcm/cmk/tree/main/charts/cmk). Its
+`values.yaml` documents every value, including each configuration key with the
+processes that read it. The container image includes the keystore plugins.
 
 - [CMK configuration reference](/components/cmk/security/cmk-config)
 - [Configuration guide](/components/cmk/security/configuration#step-5-configure-cmk)

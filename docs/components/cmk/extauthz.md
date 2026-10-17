@@ -10,9 +10,11 @@ Repository: [openkcm/extauthz](https://github.com/openkcm/extauthz)
 ## How Envoy calls ExtAuthZ
 
 ExtAuthZ implements Envoy's external authorization gRPC API
-(`envoy.service.auth.v3.Authorization/Check`). In a typical deployment, an
-Envoy Gateway `SecurityPolicy` with `extAuth` is attached to the routes for CMK
-and the Registry. See [Configure Envoy Gateway](/components/cmk/security/configuration#step-7-configure-envoy-gateway).
+(`envoy.service.auth.v3.Authorization/Check`). Each regional deployment runs its
+own ExtAuthZ next to its Envoy Gateway, and asks its own region's Session
+Manager about sessions. An Envoy Gateway `SecurityPolicy` with `extAuth` is
+attached to the CMK routes, and to the Registry's route if you publish the
+Registry through a gateway. See [Configure Envoy Gateway](/components/cmk/security/configuration#step-7-configure-envoy-gateway).
 
 ## Credential checks
 

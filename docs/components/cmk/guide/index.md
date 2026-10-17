@@ -10,7 +10,9 @@ your data.
 Your cloud service provider gives you:
 
 - **The address of the CMK UI**, for example `https://ui.example.com`, and your
-  **tenant ID**.
+  **tenant ID**. CMK runs separately in each region, and your tenant is served
+  by one of them: use the address of your tenant's region. See
+  [Your tenant](/components/cmk/guide/tenant).
 - **The identity provider** your tenant signs in with. It is usually your own
   corporate login, connected by the provider during onboarding.
 
@@ -67,6 +69,7 @@ request that colleagues must approve first. See
 | **Tasks** | Approval requests that you started or are asked to approve | Key administrators, auditors |
 | **User Groups** | The groups of your tenant and their roles | Everyone |
 | **Settings** (from your avatar) | Language and approval settings | Everyone; tenant administrators can change the approval settings |
+| Tenant menu (at the top) | The name of your tenant, and your other tenants in the same region to switch to; see [Your tenant](/components/cmk/guide/tenant) | Everyone |
 
 Tenant administrators start on **User Groups**; everyone else starts on
 **Key Configurations**.

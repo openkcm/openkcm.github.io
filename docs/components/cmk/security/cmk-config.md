@@ -35,7 +35,9 @@ Environment variable prefixes:
 | `db-migrator` | `DB_MIGRATOR_` | |
 
 An environment variable can only change a setting that exists in the file; it
-cannot add a new one.
+cannot add a new one. The Helm chart writes every setting listed in its
+`values.yaml`, so `extraEnvs` can override any of them, but `extraEnvs` apply to
+all components and each process reads only its own prefix.
 
 ### Checks at startup
 
@@ -60,7 +62,8 @@ In addition:
 
 | What | After a change |
 | --- | --- |
-| Configuration file | Restart |
+| Configuration file | Restart. The Helm chart restarts the pods of a component when its ConfigMap changes |
+| Secrets that you mount yourself | Restart, for example `kubectl rollout restart deployment -l app.kubernetes.io/part-of=cmk` |
 | Client data public keys | Picked up from the watched directory; restart the pods after updating a Kubernetes Secret to be sure |
 | Client certificates for Registry and Session Manager | Watched; the connection is rebuilt |
 | Feature flags file | Polled every `featureFlags.pollingInterval` |
@@ -68,46 +71,50 @@ In addition:
 
 ## Helm chart
 
-The chart deploys one Deployment per process, all from the same image. The
-image has no entrypoint, so **set the command and arguments for every
-component**:
+The chart is in the
+[cmk repository](https://github.com/openkcm/cmk/tree/main/charts/cmk). Its
+`values.yaml` documents every value, and its README shows a complete installation.
+It deploys one Deployment per process, all from the same image
+(`cmk/images/cmk-full-plugins` by default), and starts each with its subcommand:
 
-```yaml
-apiServer:
-  deploy: true
-  image: { command: /cmkd, args: [api-server] }
-tenantManager:
-  deploy: true
-  image: { command: /cmkd, args: [tenant-manager] }
-eventReconciler:
-  image: { command: /cmkd, args: [event-reconciler] }
-taskScheduler:
-  deploy: true
-  image: { command: /cmkd, args: [task-scheduler] }
-taskWorker:
-  deploy: true
-  image: { command: /cmkd, args: [task-worker] }
-```
+| Component | Deployed when | Command | Configuration mounted at |
+| --- | --- | --- | --- |
+| API server | `apiServer.deploy` | `/cmkd api-server` | `/etc/cmk/config.yaml` |
+| Tenant manager | `tenantManager.deploy` | `/cmkd tenant-manager` | `/etc/tenant-manager/config.yaml` |
+| Event reconciler | `eventReconciler.deploy` | `/cmkd event-reconciler` | `/etc/cmk/config.yaml` |
+| Task scheduler | `taskScheduler.deploy` | `/cmkd task-scheduler`. Always one replica | `/etc/cmk/config.yaml` |
+| Task worker | `taskWorker.deploy` | `/cmkd task-worker` | `/etc/cmk/config.yaml` |
+| cmkctl (off by default) | `cmkctl.deploy` | `/cmkctl sleep` | `/etc/cmk/config.yaml` |
+| Database migrations | `dbMigrator.enabled`, as Helm hook Jobs | `/cmkd db-migrator --type=schema` before, `--type=data` after every install and upgrade | `/etc/cmk/config.yaml` |
 
-| Component | Deployed when | Configuration mounted at |
-| --- | --- | --- |
-| API server | `apiServer.deploy` | `/etc/cmk` |
-| Tenant manager | `tenantManager.deploy` | `/etc/tenant-manager` |
-| Event reconciler | `apiServer.deploy` | `/etc/cmk` |
-| Task scheduler | `taskScheduler.deploy` | `/etc/cmk`. Run exactly one replica |
-| Task worker | `taskWorker.deploy` | `/etc/cmk` |
-| Database migrations | Always, as Helm hook Jobs | `/etc/cmk/config.yaml` |
-
-- Ports: `http` 8081 (API server only), `http-status` 8888. Probes on
-  `/probe/liveness` and `/probe/readiness`.
+- Each component has its own ConfigMap: `<release>-cmk-config` for the API
+  server and `<release>-cmk-<component>-config` for the others (for a release
+  named `cmk`: `cmk-config`, `cmk-tenant-manager-config`, …). It writes the
+  sections of `config` that its process reads into `config.yaml`; the chart's
+  `values.yaml` names the readers of each section. Only the file is mounted, so
+  the image's migrations in `/etc/cmk/migrations` stay visible. A configuration
+  change restarts the affected pods.
+- Ports: `http` 8081 (API server only), `http-status` 8888. Startup, liveness and
+  readiness probes on `/probe/liveness` and `/probe/readiness`.
 - `extraVolumes`, `extraVolumeMounts`, `extraEnvs` and `extraEnvsFrom` apply to
   **all** components and the migration Jobs. Every pod gets every mounted
   Secret; keep the list to what the components need.
-- The chart renders a different set of sections for each component. `workflow`,
-  `tenant` and `databaseReplicas` are not rendered; their defaults apply.
-- The image variant `cmk-full-plugins` contains the keystore plugins under
+- The pods run as a non-root user with a read-only root filesystem and a writable
+  `/tmp`, where plugins create their sockets.
+- The image `cmk-full-plugins` contains the keystore plugins under
   `/etc/plugins/keystore` and the identity management plugins under
   `/etc/plugins/identity-management`.
+- The release notes printed by `helm install` and `helm upgrade` list the
+  settings that are missing or not production-ready.
+
+Chart versions before 0.2.0 differ: they do not start the processes on their own
+(set `<component>.image.command: /cmkd` and `image.args: [<subcommand>]`), deploy
+the event reconciler with `apiServer.deploy`, write fewer sections for most
+components (`workflow`, `tenant`, `keys` and `databaseReplicas` are missing
+everywhere, so CMK's defaults apply), create immutable ConfigMaps by default, and
+their `values-dev.yaml` is not usable as an example. When you upgrade a release
+named `cmk` from them, delete the old immutable ConfigMaps first; the chart
+README's section *Upgrading from 0.1.x* lists them.
 
 ## Minimal configuration
 
@@ -121,7 +128,7 @@ config:
     enabled: true
     profiling: false
   http:
-    address: :8081
+    port: 8081                  # written as http.address: ":8081"
     swaggerEnabled: false
 
   clientData:
@@ -247,7 +254,7 @@ PostgreSQL. CMK creates one schema per tenant.
 | `parameters.ssl.rootCert` | - | CA certificate file |
 | `parameters.ssl.cert`, `parameters.ssl.key` | - | Client certificate and key files |
 | `migrator.shared.schema`, `migrator.shared.data`, `migrator.tenant.schema`, `migrator.tenant.data` | - | Migration directories. The chart points them at `/etc/cmk/migrations/...` in the image |
-| `databaseReplicas` | - | Read replicas, same fields as `database` |
+| `databaseReplicas` | - | Read replicas, same fields as `database`. Read queries go to a random replica, writes to `database`; a lagging replica returns outdated data |
 
 - With `mode: prefer` or an empty mode, the connection falls back to plain text
   and does not verify the server. `verify-ca` checks the certificate but not the
@@ -313,8 +320,13 @@ scheduler:
 
 ## tenantManager
 
-The tenant manager receives tenant jobs from the Registry over AMQP: provision,
-apply and remove authentication, block, unblock and terminate.
+The tenant manager receives the jobs of this region's tenants from the central
+Registry over AMQP: provision, apply and remove authentication, update the
+tenant configuration, block, unblock and terminate. Its `amqp.source` and
+`amqp.target` must equal the `target` and `source` of the Registry's
+[target for this region](/components/cmk/security/registry-config#targets):
+CMK does not check a tenant's region itself. See
+[Connect a regional tenant](/components/cmk/tenant-integration).
 
 | Setting | Default | Description |
 | --- | --- | --- |
@@ -431,8 +443,8 @@ API server only.
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `address` | `:8080` | Listen address. The chart renders `:8081` |
-| `shutdownTimeout` | `5s` | Grace period at shutdown |
+| `address` | `:8080` | Listen address. The chart writes `":<config.http.port>"`, by default `:8081` |
+| `shutdownTimeout` | `5s` | Grace period at shutdown. The chart does not set it |
 | `swaggerEnabled` | `false` | Serve the API description at `/cmk/v1/swagger`. Keep disabled in production; it is served without authentication |
 
 Fixed values: base path `/cmk/v1/{tenant}`, request body limit 1 MiB, read
@@ -488,35 +500,43 @@ enable_hyok_aws:
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `keystorePool.size` | `5` | Number of prepared keystores to keep |
-| `keystorePool.interval` | `1h` | Monitoring interval. Must be greater than zero |
+| `keystorePool.size` | `5` (chart: `2`) | Number of prepared keystores that the `keystore:fill` task keeps in the pool |
+| `keystorePool.interval` | `1h` (chart: `10m`) | How often the API server records the pool fill level metric. Must be greater than zero, otherwise the metric is not recorded |
 | `keystorePool.supportedRegions` | - | Regions (`name`, `technicalName`), passed to keystore provider plugins |
-| `provisioning.initKeystoreConfig` | disabled | Initial keystore added to the pool at startup: `enabled`, `provider`, `value.localityId`, `value.commonName`, `value.managementAccessData`, `value.supportedRegions` |
+| `provisioning.initKeystoreConfig` | disabled | Initial keystore that the API server adds to the pool at startup: `enabled`, `provider`, `value.localityId`, `value.commonName`, `value.managementAccessData`, `value.supportedRegions` |
 | `landscape.name` | - | Landscape name in notifications |
 | `landscape.uiBaseUrl` | - | CMK UI URL in notifications, ending with `#` |
-| `landscape.region` | - | Region of this CMK instance |
+| `landscape.region` | - | Region of this CMK instance. Used in notifications, as the default locality of client certificates, and sent with key and system tasks |
 
 ## workflow, keys and tenant
 
-These sections are not rendered by the Helm chart; their defaults apply unless
-you provide the configuration file yourself.
+The `workflow` values are the defaults for tenants without their own workflow
+settings; `0` keeps CMK's default. Helm chart versions before 0.2.0 do not
+render these sections; CMK's defaults apply there.
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `workflow.defaultMinimumApprovals` | | Approvals required, 2 to 5 |
-| `workflow.defaultRetentionPeriodDays` | | Retention of finished workflows, 7 to 30 |
-| `workflow.defaultExpiryPeriodDays`, `workflow.defaultMaxExpiryPeriodDays` | | Expiry of open workflows, at most 7 days |
+| `workflow.defaultMinimumApprovals` | `2` | Approvals required, 2 to 5. Higher values are reduced to 5 |
+| `workflow.defaultRetentionPeriodDays` | `30` | Days that finished workflows are kept, 7 to 30. Values outside are moved into the range |
+| `workflow.defaultExpiryPeriodDays` | `7` | Days after which an open workflow expires |
+| `workflow.defaultMaxExpiryPeriodDays` | `7` | Maximum expiry a tenant can set. Higher values are reduced to 7 |
 | `keys.pendingRegistrationTimeout`, `keys.pendingCreationTimeout` | `15m` | Timeouts for keys in pending states |
-| `tenant.systemLimit`, `tenant.keyLimit`, `tenant.keyConfigLimit` | `50`, `10`, `5` | Default limits per tenant, each at least 1 |
+| `tenant.systemLimit` | `50` | Systems linked to one key configuration. At least 1 |
+| `tenant.keyLimit` | `10` | Keys of one key configuration, not counting deleted and detached keys. At least 1 |
+| `tenant.keyConfigLimit` | `5` | Key configurations per tenant. At least 1 |
+
+These are the defaults for every tenant of the region. The Registry's
+`UpdateTenantConfig` overrides `systemLimit` and `keyLimit` for one tenant; see
+[Change the tenant limits](/components/cmk/tenant-integration#step-5-optional-change-the-tenant-limits).
 
 ## audit, logger, status, telemetry
 
 | Section | Notes |
 | --- | --- |
-| `audit` | `endpoint`, `httpClient`, `additionalProperties`. Used by the API server, tenant manager, event reconciler and task worker. If the audit logger cannot be created, CMK runs without sending audit events and logs `audit logger not available, skipping audit event`. See [Audit logging](/components/cmk/security/audit) |
-| `logger` | `level` (default `info`), `format`. **At `debug` level, CMK logs its complete configuration**, including values embedded in it. Use `info` in production |
-| `status` | `enabled`, `address` (`:8888`), `profiling`. The readiness probe checks the database. Keep `profiling` disabled |
-| `telemetry` | Traces, metrics and logs export, as for [ExtAuthZ](/components/cmk/security/extauthz-config#telemetry) |
+| `audit` | `endpoint`, `httpClient` (`timeout`, default `10s`, and credentials), `additionalProperties` (YAML map added to every event). Used by the API server, tenant manager, event reconciler, task worker and cmkctl. A failed delivery is logged (`Failed to send audit log …`) and does not fail the request; with an empty `endpoint` no event is delivered. If the audit logger cannot be created, CMK logs `audit logger not available, skipping audit event`. See [Audit logging](/components/cmk/security/audit) |
+| `logger` | `level` (default `info`), `format` (`json` or `text`), `source` (add the source file and line), `formatter` (timestamp format, field names, masking). **At `debug` level, CMK logs its complete configuration**, including values embedded in it. Use `info` in production |
+| `status` | `enabled`, `address` (`:8888`), `timeout` (readiness checks, `10s`), `profiling`. The readiness probe checks the database. Keep `profiling` disabled |
+| `telemetry` | Traces, metrics and logs export, as for [ExtAuthZ](/components/cmk/security/extauthz-config#telemetry). With `metrics.prometheus.enabled`, metrics are served on `/metrics` of the status port instead of being exported. `dynatraceOneAgent` adds the OneAgent metadata |
 
 ## Groups and roles
 

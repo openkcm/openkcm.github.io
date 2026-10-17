@@ -24,7 +24,7 @@ Every process serves a status endpoint on port 8888:
 | `/probe/liveness` | Liveness probe |
 | `/probe/readiness` | Readiness probe; includes the database |
 | `/version` | Build information |
-| `/metrics` | Prometheus metrics, when enabled in `telemetry` |
+| `/metrics` | Prometheus metrics, with `telemetry.metrics.enabled` and `telemetry.metrics.prometheus.enabled` |
 
 Keep `status.profiling` switched off in production, and do not expose the status
 port outside the cluster.
@@ -66,7 +66,9 @@ migrated first, then every tenant schema. New tenants get the current schema
 when they are created.
 
 Migrating many tenants takes time. Allow for it in the Helm timeout of your
-upgrades.
+upgrades (`--timeout`) and, if you set it, in `dbMigrator.activeDeadlineSeconds`.
+If you disable the jobs (`dbMigrator.enabled: false`), run `cmkd db-migrator`
+yourself: schema migrations before, data migrations after every upgrade.
 
 ## Upgrades
 
@@ -76,12 +78,20 @@ upgrades.
    before CMK when a release requires it.
 1. Watch the migration jobs. If the schema migration fails, the upgrade stops
    before the new version starts; fix the cause and run the upgrade again.
+1. Read the *Upgrading* section of the chart README when you change the chart
+   version. From CMK chart 0.1.x to 0.2.0, a release named `cmk` needs a
+   one-time deletion of the old immutable ConfigMaps before the upgrade.
 
 A Helm rollback does not roll back database migrations. To go back to an older
 version, roll back the migrations with `cmkd db-migrator --rollback` first.
 
-CMK reads its configuration only at startup. After you change a configuration
-value, restart the processes, for example with `kubectl rollout restart`.
+CMK reads its configuration only at startup. The Helm chart restarts the pods of
+a component when its ConfigMap changes. After you change a Secret that you
+mounted yourself, restart the processes:
+
+```bash
+kubectl -n services rollout restart deployment -l app.kubernetes.io/part-of=cmk
+```
 
 ## Monitoring
 
@@ -112,7 +122,15 @@ Key material is not in any of these stores: it stays in the keystores.
 ## cmkctl
 
 `cmkctl` is the command-line tool for operators. Run it where it can reach the
-CMK database and task queue, for example in a pod started for maintenance.
+CMK database and task queue. The Helm chart starts an idle pod for it with
+`cmkctl.deploy: true`:
+
+```bash
+kubectl -n services exec deploy/cmk-cmkctl -- /cmkctl tenant list
+```
+
+The pod has the same credentials as the CMK processes. Set `cmkctl.deploy`
+back to `false` when you are done.
 
 | Command | Purpose |
 | --- | --- |
@@ -120,8 +138,10 @@ CMK database and task queue, for example in a pod started for maintenance.
 | `cmkctl task invoke --task <task> [--tenants a,b]` | Run a scheduled task now, optionally for some tenants only |
 | `cmkctl task queues`, `cmkctl task stats --queue <queue>` | Inspect the task queues |
 
-Create and terminate tenants through the Registry, not with `cmkctl`, so that
-every service and every region is informed.
+Create, block and terminate tenants through the central Registry, not with
+`cmkctl`: `cmkctl` writes only to the CMK database of its region, and the
+Registry, Session Manager and the systems are not informed. See
+[Connect a regional tenant](/components/cmk/tenant-integration).
 
 ## Troubleshooting
 
@@ -137,6 +157,7 @@ every service and every region is informed.
 | Systems stay **Processing** and then fail | No regional service answers on that region's request address |
 | A customer sees no systems | The systems are not registered for the tenant in the Registry, or their type is not `SYSTEM` or `SUBACCOUNT` |
 | An upgrade hangs | The schema migration job is failing or still running. Check its logs |
+| An upgrade fails with `field is immutable` on a ConfigMap | Immutable ConfigMaps from chart 0.1.x, or `config.isImmutable: true`. Delete the ConfigMaps and keep `config.isImmutable: false`; see the chart README |
 
 The [CMK configuration reference](/components/cmk/security/cmk-config#troubleshooting)
 lists further startup errors.

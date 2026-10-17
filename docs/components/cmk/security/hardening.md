@@ -31,15 +31,25 @@ security.
 - The gRPC connections between OpenKCM services do not use TLS unless you
   configure `secretRef.type: mtls`. Otherwise run all services in a service mesh
   with mutual TLS.
-- Keep the status ports (ExtAuthZ 8080, Session Manager 8888) reachable only by
-  the kubelet and your monitoring.
+- The central Registry is called from every region, and its gRPC API can
+  create, block and terminate tenants without authenticating the caller. Use
+  mutual TLS across the regions, and allow only the regional CMKs and
+  CMK-2-Krypton Bridges, your onboarding tooling and your cloud services.
+- Restrict the Registry's `Tenant.Region` to your CMK regions and `Tenant.ID`
+  to lowercase letters, digits and hyphens with its `validations`; see
+  [Connect a regional tenant](/components/cmk/tenant-integration#step-1-register-the-tenant).
+- Keep the status ports (ExtAuthZ 8080; CMK, Registry and Session Manager 8888)
+  reachable only by the kubelet and your monitoring.
+- Enable `networkPolicy` in the charts of CMK, ExtAuthZ, Session Manager and the
+  Registry, and list only the callers from the
+  [network layout](/components/cmk/deployment#network-layout).
 
 ## Session Manager
 
 - Set `allowedRedirectBaseURLs` to the exact CMK UI origins, each ending with
   `/`. Never add `/` or a bare host without a trailing `/`.
-- Replace the chart's example `csrfSecret` with a random value of at least 32
-  bytes, and use **the same value in ExtAuthZ**
+- Set `csrfSecret` from a Secret, to a random value of at least 32 bytes, and
+  use **the same value in ExtAuthZ**
   ([Shared CSRF secret](/components/cmk/security/configuration#shared-csrf-secret)).
 - Keep `allowHttpScheme` disabled, in `sessionManager` and in the
   `service.module.grpc.session` service.
@@ -85,6 +95,12 @@ security.
   not see out of the pod's environment: plugins inherit it.
 - `extraVolumes` are mounted into every CMK pod. Mount only the Secrets the
   components need.
+- Keep every password, key and token in a mounted Secret (`source: file`).
+  Values with `source: embedded` are stored in plain text in the ConfigMaps.
+- Enable `networkPolicy` and allow only Envoy Gateway on the API port
+  (`networkPolicy.http.from`). Keep the Service type `ClusterIP`.
+- Keep `cmkctl.deploy` off except for maintenance: the cmkctl pod holds all of
+  CMK's credentials.
 - Give tenant administrator and auditor membership
   (`KMS_TenantAdministrator_<tenant>`, `KMS_TenantAuditor_<tenant>`) only to the
   intended users in the identity provider.

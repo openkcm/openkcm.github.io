@@ -27,7 +27,8 @@ flowchart LR
 1. The bridge maps CMK's key levels onto a Krypton key hierarchy and makes sure
    every key in the chain exists in Krypton.
 1. It reports the result back to CMK and registers the systems it serves in the
-   Registry.
+   central Registry: it registers each system, maps it to its tenant, and
+   registers the tenant first if the Registry does not know it yet.
 
 ## Key hierarchy
 

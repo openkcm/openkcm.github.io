@@ -8,9 +8,13 @@ endpoint configured per service. Forward them to your SIEM or log archive.
 - Each service sends events to its `audit.endpoint` with an HTTP `POST` of OTLP
   JSON. Only `200` and `201` count as delivered; other responses are logged as
   errors. Events are not retried.
-- If `audit.endpoint` is empty, the service sends no audit events. The Session
-  Manager chart defaults to `http://localhost:4043/logs`, which needs a
-  collector next to the pod.
+- If `audit.endpoint` is empty, no audit events are delivered; CMK logs an error
+  for every event it could not send. Session Manager chart versions before
+  0.11.0 default to `http://localhost:4043/logs`, which needs a collector next
+  to the pod; later versions leave it empty.
+- In CMK, the API server, tenant manager, event reconciler and task worker send
+  audit events. The CMK chart writes the `audit` section into the configuration
+  of each of them.
 - `audit.httpClient` sets the timeout and the credentials for the endpoint, and
   `audit.additionalProperties` adds fixed properties to every event.
 

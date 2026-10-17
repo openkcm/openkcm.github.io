@@ -50,4 +50,6 @@ The UI expects Session Manager's CSRF cookie to be named `CSRF`. See
 
 ## Deployment
 
-The CMK UI ships as an nginx container image and a Helm chart.
+The CMK UI ships as an nginx container image and a Helm chart. Deploy it in
+every regional deployment, with `apiBaseUrl` set to that region's API gateway:
+a UI serves only the tenants of its region.

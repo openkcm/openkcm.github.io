@@ -1,9 +1,11 @@
 # CMK: Customer-Managed Keys
 
 CMK is the OpenKCM component that lets the customers of a cloud service govern
-the keys that protect their data. Tenants use it to create, import or link
-their keys, to decide which systems use which key, and to control the key
-lifecycle, with roles, approvals and audit events for every change.
+the keys that protect their data, at rest and in transit. Tenants use it to
+create, import or link their keys, to decide which systems use which key, and
+to control the key lifecycle, with roles, approvals and audit events for every
+change. One key can be shared by many systems: a change to the key reaches all
+of them.
 
 CMK manages metadata and policy. The customer keys stay in a keystore, and their
 key operations are performed there. For the cryptographic keys below the
@@ -20,7 +22,7 @@ operations.
 | Key lifecycle | Enable, disable, detach and delete keys, and track key versions |
 | Systems | Link the tenant's systems to a key, switch them to another key, or unlink them |
 | Propagation | Send key and system changes to the systems of every region and track the result |
-| Tenants | Onboard and offboard tenants, block and unblock them |
+| Tenants | Register tenants centrally in the Registry, each with the region that serves it; onboard and offboard them, block and unblock them |
 | Identity | Let each tenant sign in with its own identity provider and use its own user directory |
 | Roles | Separate tenant administrators, key administrators and auditors |
 | Approvals | Require approval by other users for sensitive key operations |
@@ -52,28 +54,46 @@ disabled key depends on that system.
 
 ## How CMK works
 
+CMK is deployed in two parts:
+
+- A **central deployment** with the **Registry**. It knows every tenant and the
+  region that serves it, and every system of the cloud services and the tenant
+  it belongs to.
+- A **regional deployment** for each CMK region, with the CMK service, the CMK
+  UI, ExtAuthZ and Session Manager. It serves the tenants registered for its
+  region: their users sign in and manage their keys there, and their data stays
+  in that region's databases.
+
 ```mermaid
 flowchart LR
-    U["Tenant users"] -- "CMK UI / API" --> GW["API gateway<br/>with ExtAuthZ"]
-    GW --> C["CMK service"]
-    U -- "sign-in" --> SM["Session Manager"]
+    subgraph Central["Central deployment"]
+        R["Registry"]
+    end
+    subgraph Regional["Regional deployment, one per CMK region"]
+        GW["API gateway<br/>with ExtAuthZ"]
+        C["CMK service"]
+        SM["Session Manager"]
+        GW --> C
+    end
+    U["Tenant users"] -- "CMK UI / API" --> GW
+    U -- "sign-in" --> SM
     SM -- "OpenID Connect" --> IdP["Tenant identity provider"]
     C -- "keystore plugins" --> KS["Keystores"]
     C -- "directory plugins" --> Dir["Tenant directory"]
-    R["Registry"] -- "tenants" --> C
-    C -- "key and system changes" --> S["Systems in each region"]
+    R -- "tenants of this region" --> C
+    C -- "key and system changes" --> S["Systems"]
     C -- "key tasks" --> BR["CMK-2-Krypton Bridge"]
     BR -- "key operations" --> KR["Krypton"]
 ```
 
-| Service | Role |
-| --- | --- |
-| CMK service | API, business logic, workflows and propagation |
-| CMK UI | Web console |
-| Registry | Global registry of tenants and systems |
-| Session Manager | Sign-in with the tenant's identity provider |
-| ExtAuthZ | Checks every API request at the gateway |
-| CMK-2-Krypton Bridge | Turns CMK's key decisions into Krypton operations (early stage) |
+| Service | Deployment | Role |
+| --- | --- | --- |
+| Registry | Central | Registers tenants, with their region, and the systems that use their keys |
+| CMK service | Regional | API, business logic, workflows and propagation |
+| CMK UI | Regional | Web console |
+| Session Manager | Regional | Sign-in with the tenant's identity provider |
+| ExtAuthZ | Regional | Checks every API request at the gateway |
+| CMK-2-Krypton Bridge | Regional | Turns CMK's key decisions into Krypton operations (early stage) |
 
 Keystores and user directories connect through plugins. Today CMK includes a
 plugin for AWS KMS and plugins for SCIM directories; further keystores can be

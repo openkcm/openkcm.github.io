@@ -2,8 +2,9 @@
 
 This page describes every configuration setting of the
 [Registry](/components/cmk/registry), how the Registry applies it, and what
-happens when it is wrong. The Registry keeps the tenants and systems of all
-regions and sends tenant jobs to the CMK of each region.
+happens when it is wrong. The Registry runs once, in the central deployment.
+It keeps the tenants and systems of all regions and sends tenant jobs to the
+CMK of each region; see [Connect a regional tenant](/components/cmk/tenant-integration).
 
 Settings marked as a *value reference* take `source: embedded | env | file`;
 see [Configuration conventions](/components/cmk/security/configuration#configuration-conventions).
@@ -14,30 +15,45 @@ see [Configuration conventions](/components/cmk/security/configuration#configura
 | --- | --- |
 | File | `config.yaml`, parsed as YAML |
 | Search order | `/etc/registry/`, then the working directory |
-| Helm chart | Renders the whole `config` value into the ConfigMap `<chart name>-config` and mounts it at `/etc/registry` |
+| Helm chart | Renders the whole `config` value into a ConfigMap named after the release (`registry-config` for a release named `registry`; with `configMap.immutable`, the name ends with a hash of the content) and mounts it at `/etc/registry` |
 | Key names | Case-insensitive |
 | Unknown keys | **Startup fails** with `has invalid keys: <key>` |
 | Environment variables | Override settings that are present in the file. The name is the key path in upper case, with `_` for each dot and no prefix, for example `DATABASE_HOST` for `database.host` |
 | Checks at startup | The `orbital` section is validated, and every `validations` entry must name a known field |
 
-Configuration is read only at startup. After a change, restart the Registry,
-for example with `kubectl rollout restart`.
+Configuration is read only at startup. The Helm chart 1.4.0 and later restarts
+the pods when a value under `config` changes. After you change a Secret that
+you mounted yourself, or with older charts, restart the Registry, for example
+with `kubectl rollout restart`.
 
 ::: warning Environment variables without prefix
 Because overrides have no prefix, any environment variable that matches a key
 path overrides it. Kubernetes injects service-link variables such as
-`DATABASE_PORT` for a Service named `database` in the same namespace; avoid such
-Service names in the Registry's namespace, or disable service links for its
-pods.
+`DATABASE_PORT` for a Service named `database` in the same namespace. The Helm
+chart 1.4.0 and later disables these variables (`pod.enableServiceLinks: false`);
+with older charts, avoid such Service names in the Registry's namespace.
 :::
 
 ### Helm chart
 
-- The chart writes **everything** under `config` into `config.yaml`. Keys that
-  are not Registry settings stop the Registry at startup.
-- The chart sets no liveness or readiness probes by default. Set them; see
-  [status](#application-logger-status-and-telemetry).
-- The chart's Service exposes the gRPC port (9092) and the status port (8888).
+The chart is in the
+[registry repository](https://github.com/openkcm/registry/tree/main/charts/registry);
+its `values.yaml` documents every value. From chart version 1.4.0:
+
+- Everything under `config` is written to `config.yaml`; chart settings such as
+  `configMap.immutable` are kept outside `config`, because unknown keys stop the
+  Registry at startup.
+- A `checksum/config` annotation restarts the pods when the configuration
+  changes.
+- Startup, liveness and readiness probes, resource requests and a restrictive
+  security context (non-root, read-only root filesystem) are set by default.
+- `networkPolicy.enabled` creates a NetworkPolicy that admits only the listed
+  callers of the gRPC API and the status port.
+- The release notes warn about settings that are not production-ready.
+
+The Service exposes the gRPC port (9092) and the status port (8888). Older chart
+versions set no probes; set them as shown in
+[status](#application-logger-status-and-telemetry).
 
 ## Example
 
@@ -287,7 +303,8 @@ For the Registry:
 | `telemetry.metrics.prometheus.enabled` | `true` if you scrape metrics | Exposes `grpc.request_count` and tenant metrics on `/metrics` |
 
 Readiness reports ready when both the gRPC health service and the database
-respond. Set the probes in the chart:
+respond. The chart 1.4.0 and later sets these probes by default; with older
+charts, set them yourself:
 
 ```yaml
 livenessProbe:

@@ -17,7 +17,7 @@ settings marked as *credentials* take a `secretRef`. Both are described in
 | --- | --- |
 | File | `config.yaml`, parsed as YAML |
 | Locations | `/etc/session-manager/config.yaml` and `./config.yaml`. If both exist, values from the second override the first |
-| Helm chart | Renders the `config` value into a ConfigMap and mounts it at `/etc/<chart name>`. **Do not set `nameOverride`**: the binary only reads `/etc/session-manager` |
+| Helm chart | Renders the `config` value into a ConfigMap named after the release (`session-manager` for a release named `session-manager`; with `configMap.immutable`, the name ends with a hash of the content) and mounts it at `/etc/session-manager`. Chart versions before 0.11.0 mount it at `/etc/<chart name>`: with them, do not set `nameOverride` |
 | Unknown keys | **Ignored without a warning.** Check spelling and nesting carefully |
 | Key names | Section names that select a module (`database`, `valkey`, `trust`, `credentials`, `migrate`, `apps`) must be written exactly in lowercase. Other keys are case-insensitive |
 | Environment variables | Cannot override settings. Use a value reference with `source: env`. The PostgreSQL client also reads the standard `PG*` variables |
@@ -38,36 +38,53 @@ The same binary and configuration run three processes:
 
 | What | After a change |
 | --- | --- |
-| Configuration file | The chart restarts the API server pods automatically. **Restart the housekeeper yourself** |
+| Configuration file | The chart restarts the API server and housekeeper pods automatically. Chart versions before 0.11.0 restart only the API server: **restart the housekeeper yourself** |
 | Tenant trust records | Immediately; they are read from the database on every login and session check |
 | Identity provider discovery documents | Cached for 30 minutes per issuer |
 | CSRF secret, client credentials | Restart |
 
 ## Helm chart
 
-The chart deploys:
+The chart is in the
+[session-manager repository](https://github.com/openkcm/session-manager/tree/main/charts/session-manager).
+Its `values.yaml` documents every value, and its README shows a complete
+installation with the credentials mounted from Secrets.
 
 | Resource | Details |
 | --- | --- |
-| API server Deployment | Ports `http` 8080, `grpc` 9091, `http-status` 8888. Probes on `/probe/liveness` and `/probe/readiness`. Supports `extraEnvs` and `extraEnvsFrom` |
-| Housekeeper Deployment | Always one replica. Receives no environment variables from `extraEnvs` |
-| Migration Job | Runs as a Helm pre-install and pre-upgrade hook. Receives no environment variables from `extraEnvs` |
-| ConfigMap | Helm hook, rendered from the `config` value |
-| Service | Exposes 8080, 8888 and 9091 together |
+| API server Deployment | Ports `http` 8080, `grpc` 9091, `http-status` 8888. Probes on `/probe/liveness` and `/probe/readiness` |
+| Housekeeper Deployment | Always one replica, replaced with the `Recreate` strategy so that two housekeepers never run at the same time. Probes on the status port |
+| Migration Job | Runs as a Helm pre-install and pre-upgrade hook, with its own hook copy of the configuration |
+| ConfigMap | Rendered from the `config` value |
+| Service | Exposes 8080, 8888 and 9091 |
+| NetworkPolicy | Optional (`networkPolicy.enabled`): admits only the peers you list for the sign-in endpoints, the gRPC API and the status port |
 
-Because the housekeeper and the migration job get no environment variables, use
-`source: file` rather than `source: env` for all value references.
+All three workloads mount the same `extraVolumes` and receive the same
+`extraEnvs`, so value references with `source: file` and `source: env` work in
+every process. Chart versions before 0.11.0 pass no environment variables to the
+housekeeper and the migration job; with them, use `source: file` for all value
+references.
 
-Replace these chart defaults in every installation:
+Chart 0.11.0 and later render every key under `config` into `config.yaml`, run
+as a non-root user with a read-only root filesystem, and ship no example
+credentials. Set these values in every installation:
 
-| Setting | Chart default | Why |
-| --- | --- | --- |
-| `sessionManager.allowedRedirectBaseURLs` | not set | Without it every login and logout fails with `400` |
-| `sessionManager.csrfSecret` | a published example value | Anyone who knows it can forge CSRF tokens. Use a new random value, **the same as ExtAuthZ's `csrfSecret`** |
-| `sessionManager.callbackURL` | `http://localhost:8080/sm/callback` | Must be the public HTTPS URL |
-| `sessionManager.csrfCookieTemplate.domain` | `localhost` | Must be the parent domain of the UI and API hosts |
-| `database.password`, `valkey.password` | example values | Use secrets |
-| `grpc.flags.reflection` | `true` | Disable in production |
+| Setting | Why |
+| --- | --- |
+| `database.host`, `user`, `password`; `valkey.host`, `password` | Session Manager does not start without its stores. Use `source: file` for the passwords |
+| `sessionManager.callbackURL` | Must be the public HTTPS URL of `/sm/callback` |
+| `sessionManager.allowedRedirectBaseURLs` | Without it every login and logout fails with `400` |
+| `sessionManager.csrfSecret` | At least 32 bytes, **the same as ExtAuthZ's `csrfSecret`** |
+| `sessionManager.clientAuth.clientID`, `clientSecret` | The database migration of a new installation fails without the client ID |
+| `sessionManager.csrfCookieTemplate.domain` | Must be the parent domain of the UI and API hosts |
+
+The release notes printed by `helm install` and `helm upgrade` list the settings
+that are missing or not production-ready.
+
+Older charts render only fixed sections of `config` and drop other keys such as
+`appsOrder`. They also ship example values for the settings above, including a
+published example CSRF secret and `localhost` URLs, and enable gRPC reflection:
+replace all of them.
 
 ## Minimal configuration
 
@@ -160,7 +177,7 @@ it.
 | --- | --- | --- |
 | `address` | `:9092` | Listen address. The chart uses `:9091`; ExtAuthZ and CMK must use the same port |
 | `flags.health` | `false` | Serve the gRPC health service. The chart sets `true` |
-| `flags.reflection` | `false` | Serve gRPC reflection. The chart sets `true`; disable it in production |
+| `flags.reflection` | `false` | Serve gRPC reflection. Disable it in production. Chart versions before 0.11.0 set `true` |
 | `shutdownTimeout` | `5s` | Grace period at shutdown |
 | `maxRecvMsgSize`, `efPolMinTime`, `efPolPermitWithoutStream`, `attributes.*` | | Same as for [ExtAuthZ](/components/cmk/security/extauthz-config#grpcserver) |
 
@@ -386,7 +403,7 @@ currently not stored.
 | --- | --- |
 | `status` | `enabled` (chart: `true`), `address` (`:8888`), `profiling` (keep `false`). The readiness probe does not check the database or Valkey |
 | `logger` | `level` (`info`), `format` (`json`) |
-| `audit` | `endpoint`, `httpClient`, `additionalProperties`, as for [ExtAuthZ](/components/cmk/security/extauthz-config#audit). The chart default `http://localhost:4043/logs` assumes a local collector |
+| `audit` | `endpoint`, `httpClient`, `additionalProperties`, as for [ExtAuthZ](/components/cmk/security/extauthz-config#audit). Without an endpoint, sign-ins work, but the audit events are not delivered and each attempt logs an error. Chart versions before 0.11.0 set `http://localhost:4043/logs` |
 | `telemetry` | As for [ExtAuthZ](/components/cmk/security/extauthz-config#telemetry) |
 
 Do not set the environment variable `DEBUGFEATURES` in production. It makes
@@ -397,14 +414,14 @@ tokens.
 
 | Symptom | Log message | Cause and fix |
 | --- | --- | --- |
-| Pod does not start | `no config file found at the paths` | Config not mounted at `/etc/session-manager`; check `nameOverride` |
+| Pod does not start | `no config file found at the paths` | Config not mounted at `/etc/session-manager`; with chart versions before 0.11.0, check `nameOverride` |
 | Pod does not start | `DB schema version mismatch: required 6, got <n>` | The migration job did not run or failed |
 | Pod does not start | `reading DB schema version` | Database not reachable or wrong credentials. Check for a trailing newline in the password file |
 | Migration job fails | `client_id is not set in the config` | Set `sessionManager.clientAuth.clientID` |
 | Pod does not start | `CSRF secret must be at least 32 bytes` | Secret too short or empty |
 | Pod does not start | `creating valkey client` | Valkey not reachable, or `host` without port |
 | Pod does not start | `missing mTLS configuration` | `clientAuth.type: mtls` without `clientAuth.mTLS` |
-| Pod does not start | `environment variable not set` | A value reference with `source: env` in the housekeeper or migration job; use `source: file` |
+| Pod does not start | `environment variable not set` | A value reference with `source: env` whose variable is not set. Chart versions before 0.11.0 pass no environment variables to the housekeeper and the migration job |
 | Login `400` | `request URI does not match an allowed redirect base URL` | `allowedRedirectBaseURLs` missing or does not match `request_uri` |
 | Login `404` | `getting trust from repository: not_found` | No trust record for the tenant; onboard the tenant's authentication settings |
 | Login `500` | `issuer does not match` | Trust issuer differs from the discovery document's issuer, often by a trailing `/` |

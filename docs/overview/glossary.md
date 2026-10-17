@@ -12,9 +12,11 @@ entry links to the page that explains the term in detail.
 | Auditor | Short for tenant auditor: the CMK role that can read everything in a tenant and change nothing. See [Roles](/components/cmk/guide/access#roles) |
 | BYOK | Bring your own key. The customer generates the key material and imports it, wrapped, into the keystore that the platform provides for the tenant. See [Keys](/components/cmk/guide/keys#bring-your-own-key-byok) |
 | Cedar | The policy language that ExtAuthZ uses to decide which caller may call which API path. See [ExtAuthZ](/components/cmk/extauthz) |
+| Central deployment | The deployment of the Registry, shared by all CMK regions. See [Deployment planning](/components/cmk/deployment#what-you-deploy) |
 | Client data | A short-lived, signed statement about the caller that ExtAuthZ adds to every allowed request, and that CMK verifies. See [Signed client data](/components/cmk/security/client-data) |
 | CMK | Customer-Managed Keys: the OpenKCM component that governs customer keys, their keystores, tenants, roles, approvals and the propagation of key changes. See [CMK](/overview/cmk) |
 | CMK-2-Krypton Bridge | The CMK service that turns CMK's key decisions into Krypton operations. See [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) |
+| CMK region | A regional deployment of CMK, with the CMK service, CMK UI, ExtAuthZ and Session Manager. It serves the tenants registered for this region. See [Deployment planning](/components/cmk/deployment#regions) |
 | CMK UI | The web console in which tenant users manage their keys, systems, groups and approvals. See [CMK UI](/components/cmk/cmk-ui) |
 | Customer key | The tenant's root key, managed through CMK and kept in a keystore. Level L1 of the key hierarchy |
 | DEK | Data encryption key: a key that encrypts data. Level L4 of the key hierarchy |
@@ -48,8 +50,9 @@ entry links to the page that explains the term in detail.
 | Orbital | The library that CMK and the Registry use to send jobs and tasks between services over an AMQP broker, and to track their results |
 | Plugin | A separate process that connects CMK to a keystore or to a user directory. See [Plugins](/components/cmk/plugins) |
 | Primary key | The key of a key configuration that its linked systems use |
-| Region | A location where systems run. CMK sends key and system changes to each region |
-| Registry | The global registry of tenants and systems. It onboards tenants and sends them to CMK. See [Registry](/components/cmk/registry) |
+| Region | Either a CMK region, which serves tenants, or a system region, where systems run. See [Deployment planning](/components/cmk/deployment#regions) |
+| Regional deployment | The deployment of CMK, CMK UI, ExtAuthZ and Session Manager for one CMK region |
+| Registry | The central registry of tenants and systems. Tenants are registered there with their CMK region, and the Registry sends each tenant's jobs to the CMK of that region. See [Registry](/components/cmk/registry) and [Connect a regional tenant](/components/cmk/tenant-integration) |
 | Role | What a user may do in a tenant: tenant administrator, key administrator or auditor. A user holds exactly one role per tenant |
 
 ## S–Z
@@ -58,9 +61,10 @@ entry links to the page that explains the term in detail.
 | --- | --- |
 | SCIM | System for Cross-domain Identity Management: a standard API for user directories, used by CMK to look up users and groups |
 | Session Manager | The service that runs the browser sign-in with the tenant's identity provider and keeps the browser sessions. See [Session Manager](/components/cmk/session-manager) |
-| System | A service instance of the cloud service in a region that uses a tenant's key, for example a database of that tenant. See [Systems](/components/cmk/guide/systems) |
+| System | A service instance of the cloud service in a region that uses a tenant's key, for example a database of that tenant. Registered in the Registry and mapped to a tenant. See [Systems](/components/cmk/guide/systems) |
+| System region | The region where a system runs, for example `eu10`. The CMK of the system's tenant sends the system's tasks to its target for this region |
 | System-managed key | A key that the keystore generates on request. Not available in the current version of CMK; use BYOK or HYOK |
-| Tenant | A customer of the cloud service. Each tenant has its own keys, users, identity provider and data, isolated from other tenants |
+| Tenant | A customer of the cloud service. Each tenant has its own keys, users, identity provider and data, isolated from other tenants. Registered in the Registry with one CMK region. See [Connect a regional tenant](/components/cmk/tenant-integration) |
 | Tenant administrator | The CMK role that manages the tenant's groups and settings. It has no access to keys. See [Roles](/components/cmk/guide/access#roles) |
 | Trust | The record that tells Session Manager and ExtAuthZ which identity provider a tenant uses |
 | Wrapping | Encrypting a key with another key, for example to import BYOK key material safely |

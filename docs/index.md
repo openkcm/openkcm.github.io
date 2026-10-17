@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: "OpenKCM"
-  text: "Customer-controlled keys for cloud services"
-  tagline: "Open-source key management that lets the customers of a cloud service own the keys that protect their data, decide who may use them, and withdraw them at any time."
+  text: "Customer-controlled key chain management for services"
+  tagline: "Open-source key management that lets the customers of a cloud service own the keys that protect their data at rest and in transit, share one key across many services, decide who may use it, and withdraw it from all of them at any time."
   image:
     src: https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/official_logo.svg
     alt: OpenKCM
@@ -57,7 +57,7 @@ features:
 | **Evaluating OpenKCM** for your platform | [Overview](/overview/) | [Core concepts](/overview/core-concept), [Trust model](/overview/trust-model) |
 | **A customer** who manages keys in CMK: tenant administrator, key administrator or auditor | [Manage your keys](/components/cmk/guide/) | [Keys](/components/cmk/guide/keys), [Approvals](/components/cmk/guide/approvals) |
 | **Building a cloud service** that encrypts data with customer keys | [Connect a regional system](/components/cmk/system-integration) | [CMK API](/components/cmk/api), [Krypton](/components/krypton/) |
-| **Operating the platform** that runs CMK | [Deployment planning](/components/cmk/deployment) | [Configuration guide](/components/cmk/security/configuration), [Operations](/components/cmk/operations) |
+| **Operating the platform** that runs CMK | [Deployment planning](/components/cmk/deployment) | [Configuration guide](/components/cmk/security/configuration), [Connect a regional tenant](/components/cmk/tenant-integration), [Operations](/components/cmk/operations) |
 | **Contributing** to OpenKCM | [Contributing](/contribute/contributing) | [Releases](/releases/), [Roadmap](/roadmap/) |
 
 New to the terms? The [glossary](/overview/glossary) explains them all.

@@ -16,7 +16,7 @@ const resourcesSidebar = [
 // https://vitepress.dev/reference/site-config
 export default withMermaid({
   title: "OpenKCM",
-  description: "OpenKCM documentation: customer-controlled keys for cloud services",
+  description: "OpenKCM documentation: customer-controlled key chain management for services",
   base: '/',
   // The SaaS section is unfinished placeholder content; keep it out of the
   // published site and the search index until it is written.
@@ -98,6 +98,7 @@ export default withMermaid({
             {text: 'Sign-in, groups and roles', link: '/components/cmk/guide/access'},
             {text: 'Key configurations', link: '/components/cmk/guide/key-configurations'},
             {text: 'Keys', link: '/components/cmk/guide/keys'},
+            {text: 'Tenant', link: '/components/cmk/guide/tenant'},
             {text: 'Systems', link: '/components/cmk/guide/systems'},
             {text: 'Approvals', link: '/components/cmk/guide/approvals'},
           ]
@@ -106,6 +107,7 @@ export default withMermaid({
           text: 'Integrate',
           items: [
             {text: 'CMK API', link: '/components/cmk/api'},
+            {text: 'Connect a regional tenant', link: '/components/cmk/tenant-integration'},
             {text: 'Connect a regional system', link: '/components/cmk/system-integration'},
             {text: 'CMK-2-Krypton Bridge', link: '/components/cmk/krypton-bridge'},
           ]

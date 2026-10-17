@@ -80,9 +80,12 @@ the idle timer.
 
 ## Tenant trust
 
-Each tenant has one trust record that names its identity provider. CMK
-maintains these records during tenant onboarding and offboarding, through the
-`oidcmapping` gRPC service:
+Each tenant has one trust record that names its identity provider. Each region
+runs its own Session Manager, which holds the trust records of the tenants
+registered for that region. The region's CMK maintains these records when the
+central Registry sends it a tenant's identity provider, block, unblock or
+termination (see [Connect a regional tenant](/components/cmk/tenant-integration)),
+through the `oidcmapping` gRPC service:
 
 - **Apply** creates or updates the trust for a tenant.
 - **Block** and **Unblock** stop or resume session-based access for a tenant:

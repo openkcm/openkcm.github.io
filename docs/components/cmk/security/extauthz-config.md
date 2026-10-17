@@ -15,7 +15,7 @@ settings marked as *credentials* take a `secretRef`. Both are described in
 | --- | --- |
 | File | `config.yaml`, parsed as YAML |
 | Search order | `/etc/extauthz/`, then `$HOME/.extauthz/`, then the working directory. The first file found is used |
-| Helm chart | Renders the `config` value into the ConfigMap `<chart name>-config` and mounts it at `/etc/extauthz` |
+| Helm chart | Renders the `config` value into a ConfigMap named after the release (`extauthz-config` for a release named `extauthz`; with `configMap.immutable`, the name ends with a hash of the content) and mounts it at `/etc/extauthz` |
 | Key names | Case-insensitive |
 | Unknown keys | **Startup fails** with `has invalid keys: <key>` |
 | Environment variables | Cannot override settings. Use a value reference with `source: env` for single values |
@@ -33,17 +33,31 @@ settings marked as *credentials* take a `secretRef`. Both are described in
 | OIDC discovery documents | On first use, then kept for the process lifetime | Restart |
 | Identity provider signing keys (JWKS) | On first use, cached for 5 minutes per key ID | Automatic |
 
-The Helm chart does not restart the pods when the configuration changes. Run
-`kubectl rollout restart deployment/extauthz` after you change the
-configuration, policies or trusted subjects.
+From chart version 0.15.0, the Helm chart restarts the pods when a value under
+`config` changes. Policies, trusted subjects and Secrets that you manage
+yourself still need a restart: run
+`kubectl rollout restart deployment/extauthz` after you change them. Older
+chart versions never restart the pods on their own.
 
 ### Helm chart and rendered keys
 
-The chart renders only these keys of its `config` value: `environment`,
-`labels`, `isImmutable`, `featureGates`, `logger`, `status`, `telemetry`,
-`grpcServer`, `cedar`, `mtls`, `jwt`, `clientData`, `audit`, `valkey`,
-`sessionPathPrefixes`, `sessionManager` and `csrfSecret`. Other keys are
-dropped.
+The chart is in the
+[extauthz repository](https://github.com/openkcm/extauthz/tree/main/charts/extauthz);
+its `values.yaml` documents every value.
+
+- **Chart 0.15.0 and later** renders every key under `config` into
+  `config.yaml`. Only `config.environment` and `config.labels` become
+  `application.environment` and `application.labels`. A misspelled key
+  therefore stops ExtAuthZ at startup instead of being ignored.
+- **Older charts** render only `environment`, `labels`, `isImmutable`,
+  `featureGates`, `logger`, `status`, `telemetry`, `grpcServer`, `cedar`,
+  `mtls`, `jwt`, `clientData`, `audit`, `valkey`, `sessionPathPrefixes`,
+  `sessionManager` and `csrfSecret`, and drop other keys such as
+  `featureFlags`.
+
+Chart 0.15.0 also sets probes, resource requests and a restrictive security
+context by default, disables `sessionManager` until you configure it, and can
+create a NetworkPolicy (`networkPolicy.enabled`) that admits only Envoy Gateway.
 
 The chart mounts these volumes by default. It does not create them; provide
 them with the same names:
