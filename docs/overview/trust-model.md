@@ -33,9 +33,8 @@ and what happens when a customer withdraws a key.
 
 | Key type | Key material | How the customer withdraws access |
 | --- | --- | --- |
-| System-managed | Generated in the keystore provided for the tenant | A key administrator disables or deletes the key in CMK |
 | BYOK | Provided by the customer, imported into the keystore provided for the tenant | A key administrator disables or deletes the key in CMK. The customer keeps their own copy of the material |
-| HYOK | Generated and kept in the customer's own keystore | The customer disables the key in their own keystore, or a key administrator disables it in CMK |
+| HYOK | Generated and kept in the customer's own keystore | The customer disables the key in their own keystore. CMK notices it at its next check |
 
 When a key is disabled:
 

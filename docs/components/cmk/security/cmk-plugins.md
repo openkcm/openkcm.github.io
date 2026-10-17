@@ -56,7 +56,7 @@ remaining types:
 ```yaml
 config:
   plugins:
-    # Customer keys in AWS KMS: system-managed, BYOK and HYOK
+    # Customer keys in AWS KMS: BYOK and HYOK
     - name: AWS
       type: KeystoreInstanceKeyOperation
       path: /etc/plugins/keystore/keystoreop-aws
@@ -101,7 +101,7 @@ The AWS plugin creates, imports, enables, disables and deletes keys in AWS KMS.
 | `type` | `KeystoreInstanceKeyOperation` |
 | `path` | `/etc/plugins/keystore/keystoreop-aws` |
 | `name` | Your choice, for example `AWS`. The lowercase name is used in feature flags: `enable_byok_aws`, `enable_hyok_aws`, `detect_hyok_rotation_aws` |
-| `tags` | `default_keystore` for system-managed and BYOK keys; `hyok` for HYOK keys |
+| `tags` | `default_keystore` for BYOK keys; `hyok` for HYOK keys |
 
 ### Authentication methods
 

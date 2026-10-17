@@ -75,3 +75,15 @@ Key metadata is stored in PostgreSQL.
 - `make dev` in the repository starts PostgreSQL and a local Krypton server.
 - Building Krypton requires the Go experiment `runtimesecret`
   (`GOEXPERIMENT=runtimesecret`).
+
+## Using Krypton with CMK
+
+Krypton runs on its own. In an OpenKCM deployment with CMK, the
+[CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) receives CMK's key tasks
+and creates the corresponding keys in Krypton.
+
+## See also
+
+- [Krypton overview](/overview/krypton): what Krypton is for and when to use it
+- [Krypton releases](https://github.com/openkcm/krypton/releases)
+- [Glossary](/overview/glossary)

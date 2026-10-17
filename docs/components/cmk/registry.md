@@ -32,6 +32,9 @@ whether the system's L1 key has been claimed. It does not store key material.
 
 The API definitions are in [api-sdk](https://github.com/openkcm/api-sdk).
 
+Every setting of the Registry is described in the
+[Registry configuration reference](/components/cmk/security/registry-config).
+
 ### Registry and CMK
 
 The Registry sends tenant jobs, such as onboarding a new tenant, to the CMK

@@ -32,8 +32,8 @@ same rules on every API call.
 
 ## Key management
 
-The UI provides wizards to create system-managed keys and to link HYOK keys.
-Importing BYOK key material is available through the CMK API.
+The UI provides wizards to create BYOK keys and import their key material, and
+to link HYOK keys from AWS KMS. See [Keys](/components/cmk/guide/keys).
 
 ## Configuration
 

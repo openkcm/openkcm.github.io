@@ -6,7 +6,7 @@ operations: the bridge turns CMK operations, such as creating, enabling,
 disabling and deleting keys, into Krypton requests, so that a customer's
 decisions in CMK are enforced in Krypton as well.
 
-Repository: [openkcm/CMK-2-Krypton-bridge](https://github.com/openkcm/cmk-krypton-bridge)
+Repository: [openkcm/cmk-krypton-bridge](https://github.com/openkcm/cmk-krypton-bridge)
 
 ::: warning Early stage
 The bridge is under active development. See [Current state](#current-state).
@@ -55,7 +55,7 @@ same keys.
 | CLI `cmk2kryptonctl` | - | `health`, `ensure-hierarchy`, `list-keys` against the gRPC API |
 
 ```bash
-cmk2kryptonctl --addr=CMK-2-Krypton-bridge:9092 ensure-hierarchy \
+cmk2kryptonctl --addr=cmk-krypton-bridge:9092 ensure-hierarchy \
   --tenant-id=acme --service-id=payments --level=L4
 ```
 

@@ -1,3 +1,11 @@
-# Developer Guide
+---
+head:
+  - - meta
+    - http-equiv: refresh
+      content: 0; url=/contribute/contributing
+search: false
+---
 
-This guide covers setup, coding conventions, and contribution guidelines for OpenKCM developers.
+# Developer guide
+
+This page has moved to [Contributing](/contribute/contributing).

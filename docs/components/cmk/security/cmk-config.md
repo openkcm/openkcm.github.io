@@ -389,7 +389,7 @@ examples for every available plugin are in
 | `checksum` | SHA-256 of the binary, hex-encoded. If set, CMK refuses a binary that does not match |
 | `yamlConfiguration` | Plugin-specific configuration, as a YAML string |
 | `logLevel` | Log level of the plugin |
-| `tags` | `default_keystore` marks the keystore for system-managed and BYOK keys; `hyok` marks a keystore for HYOK keys |
+| `tags` | `default_keystore` marks the keystore for BYOK keys; `hyok` marks a keystore for HYOK keys |
 | `disabled` | Skip the plugin |
 
 | Type | Allowed | Built-in |

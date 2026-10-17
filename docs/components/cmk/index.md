@@ -7,8 +7,21 @@ services, plugins and shared libraries. For its cryptographic key operations,
 CMK requires [Krypton](/components/krypton/), which it drives through the
 CMK-2-Krypton Bridge.
 
-This section describes what each service does, based on its source code, how
-the services work together, and how to configure and secure them.
+This section is for everyone who works with CMK: the customers who manage their
+keys in it, the teams who connect their cloud services to it, and the operators
+who run it.
+
+## Start here
+
+| You want to… | Read |
+| --- | --- |
+| Manage keys, key configurations, systems or approvals in CMK | [Manage your keys](/components/cmk/guide/) |
+| Give users access to a tenant, or understand what each role may do | [Sign-in, groups and roles](/components/cmk/guide/access) |
+| Automate CMK through its REST API | [CMK API](/components/cmk/api) |
+| Make your cloud service receive key changes from CMK | [Connect a regional system](/components/cmk/system-integration) |
+| Plan and install a CMK deployment | [Deployment planning](/components/cmk/deployment), then the [configuration guide](/components/cmk/security/configuration) |
+| Run, upgrade and troubleshoot CMK | [Operations](/components/cmk/operations) |
+| Review how CMK protects access before going live | [Security architecture](/components/cmk/security/) and the [hardening checklist](/components/cmk/security/hardening) |
 
 ## CMK services
 
@@ -19,7 +32,7 @@ the services work together, and how to configure and secure them.
 | [Registry](/components/cmk/registry) | Global registry of tenants and the systems they own | [registry][registry] |
 | [ExtAuthZ](/components/cmk/extauthz) | Authenticates every API request, evaluates Cedar policies, signs client data | [extauthz][extauthz] |
 | [Session Manager](/components/cmk/session-manager) | OIDC login, browser sessions and per-tenant identity provider trust | [session-manager][sm] |
-| [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [CMK-2-Krypton-bridge][bridge] |
+| [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [cmk-krypton-bridge][bridge] |
 
 ## How the services work together
 

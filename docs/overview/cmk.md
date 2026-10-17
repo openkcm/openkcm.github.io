@@ -16,7 +16,7 @@ operations.
 
 | Capability | Description |
 | --- | --- |
-| Customer keys | Create system-managed keys, import BYOK key material, or link HYOK keys from the customer's own keystore |
+| Customer keys | Import the customer's key material (BYOK), or link keys from the customer's own keystore (HYOK) |
 | Key lifecycle | Enable, disable, detach and delete keys, and track key versions |
 | Systems | Link the tenant's systems to a key, switch them to another key, or unlink them |
 | Propagation | Send key and system changes to the systems of every region and track the result |
@@ -31,7 +31,6 @@ operations.
 
 | Key type | What the tenant does | What CMK does |
 | --- | --- | --- |
-| System-managed | Requests a key | Has the keystore create it in the keystore provided for the tenant |
 | BYOK | Wraps their own key material with a key provided by the keystore and uploads it | Passes the wrapped material to the keystore, without keeping it |
 | HYOK | Creates a key in their own keystore and registers it | Links the existing key, checks its state regularly and propagates changes |
 
