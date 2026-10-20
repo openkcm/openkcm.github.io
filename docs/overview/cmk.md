@@ -26,7 +26,7 @@ operations.
 | Identity | Let each tenant sign in with its own identity provider and use its own user directory |
 | Roles | Separate tenant administrators, key administrators and auditors |
 | Approvals | Require approval by other users for sensitive key operations |
-| Audit | Record key, system, login and access events for the customer's logging infrastructure |
+| Audit | Record key, system, login and access events, and send them to the operator's audit collector (OTLP) |
 | Cryptographic keys | Have Krypton create and operate the key hierarchy of each tenant and service, through the CMK-2-Krypton Bridge |
 
 ## Key types
@@ -117,7 +117,7 @@ these in detail.
 ## Learn more
 
 - [CMK components](/components/cmk/): the services and how they work together.
-- [Security configuration guide](/components/cmk/security/configuration): set up
-  authentication and authorization step by step.
+- [Install a regional deployment](/components/cmk/security/configuration): install
+  and configure the services step by step.
 - [Trust model](/overview/trust-model): who holds which keys and who can revoke
   access.

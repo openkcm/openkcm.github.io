@@ -26,6 +26,7 @@ and the deployable artifacts of every component.
 | ExtAuthZ | Request authentication and authorization at the gateway | [extauthz](https://github.com/openkcm/extauthz/releases) |
 | Session Manager | Browser sign-in and sessions | [session-manager](https://github.com/openkcm/session-manager/releases) |
 | CMK-2-Krypton Bridge | Connection from CMK to Krypton | [cmk-krypton-bridge](https://github.com/openkcm/cmk-krypton-bridge/releases) |
+| Checker | Health of the cluster and versions of the services, over HTTP | [checker](https://github.com/openkcm/checker/releases) |
 | Keystore plugins | AWS KMS and other keystore integrations | [keystore-plugins](https://github.com/openkcm/keystore-plugins/releases) |
 | Identity management plugins | SCIM directory integration | [identity-management-plugins](https://github.com/openkcm/identity-management-plugins/releases) |
 
@@ -49,14 +50,45 @@ own integration or plugin.
 
 ## Artifacts
 
-- **Container images** are published to the GitHub Container Registry under
-  `ghcr.io/openkcm` with every release.
-- **Helm charts** are in the `charts/` directory of each service repository and
-  are released together with the service.
-- **Plugins** are not deployed on their own: they are bundled into the CMK
-  image that includes plugins.
+Every service is published as a container image and a Helm chart in the GitHub
+Container Registry. The charts are OCI artifacts: install them directly from
+the registry, without `helm repo add`.
 
-Use explicit image tags or digests in your deployments rather than `latest`.
+| Service | Helm chart | Container image |
+| --- | --- | --- |
+| CMK | `oci://ghcr.io/openkcm/charts/cmk` | `ghcr.io/openkcm/cmk/images/cmk-full-plugins` |
+| CMK UI | `oci://ghcr.io/openkcm/charts/cmk-ui` | `ghcr.io/openkcm/cmk-ui/images/cmk-ui` |
+| Registry | `oci://ghcr.io/openkcm/charts/registry` | `ghcr.io/openkcm/registry/images/registry` |
+| ExtAuthZ | `oci://ghcr.io/openkcm/charts/extauthz` | `ghcr.io/openkcm/extauthz/images/extauthz` |
+| Session Manager | `oci://ghcr.io/openkcm/charts/session-manager` | `ghcr.io/openkcm/session-manager/images/session-manager` |
+| Checker | `oci://ghcr.io/openkcm/charts/checker` | `ghcr.io/openkcm/checker/images/checker` |
+| Krypton root server and agent | `oci://ghcr.io/openkcm/charts/krypton-root` | `ghcr.io/openkcm/krypton/images/root`, `ghcr.io/openkcm/krypton/images/agent` |
+
+Show the latest version of a chart, and the service version it deploys by
+default (`appVersion`), with:
+
+```bash
+helm show chart oci://ghcr.io/openkcm/charts/cmk
+```
+
+- **Chart and service versions.** Each chart deploys, by default, the service
+  version it was released with: the image tag defaults to the chart's
+  `appVersion`. Pin the chart version with `--version`; set `image.tag` or
+  `image.digest` only to deploy another service version.
+- **Chart documentation.** Each chart's `README.md` lists the resources it
+  creates and its upgrade notes, and its `values.yaml` documents every value,
+  including every setting of the service, with examples. Both are in the
+  `charts/` directory of the service repository.
+- **Plugins** are not deployed on their own: the CMK image `cmk-full-plugins`
+  contains the binaries of the plugin images
+  `ghcr.io/openkcm/keystore-plugins/images/keystore-plugins` and
+  `ghcr.io/openkcm/identity-management-plugins/images/identity-management-plugins`.
+- **Krypton** is in pre-production. Set the image of the `krypton-root` chart
+  explicitly to `ghcr.io/openkcm/krypton/images/root` with a released tag.
+- **The CMK-2-Krypton Bridge** is a proof of concept. Its chart is in its
+  repository; it has no released images yet.
+
+Use explicit chart versions, and image tags or digests, rather than `latest`.
 
 ## See also
 

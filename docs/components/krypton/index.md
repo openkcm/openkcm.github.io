@@ -56,8 +56,7 @@ Key metadata is stored in PostgreSQL.
 
 - Configure the `auth` section of the root server in every environment. It
   enables mutual TLS (TLS 1.3) and an allowlist of client identities for the
-  gRPC API. Without it, the gRPC API accepts connections without TLS or
-  authentication.
+  gRPC API.
 - The KMIP server requires mutual TLS. A client certificate's common name must
   equal the tenant ID of the keys it requests.
 - Krypton keeps key material in locked memory and disables core dumps.

@@ -74,9 +74,10 @@ registration.
 | Mapping | Map or unmap a system to a tenant, get a mapping |
 
 The API definitions are in [api-sdk](https://github.com/openkcm/api-sdk). The
-API is gRPC only and does not authenticate its callers: allow only your
-onboarding tooling, your cloud services and the regional CMK deployments to
-reach it.
+API is gRPC only, on port 9092. Allow only your onboarding tooling, your cloud
+services, the regional CMK deployments and the CMK-2-Krypton Bridges to reach
+it, with network policies and a service mesh with mutual TLS; see the
+[hardening checklist](/components/cmk/security/hardening#internal-network).
 
 Every setting of the Registry is described in the
 [Registry configuration reference](/components/cmk/security/registry-config).
@@ -86,8 +87,8 @@ Every setting of the Registry is described in the
 The Registry has one Orbital **target** per CMK region, each with the AMQP
 queues of that region's CMK tenant manager. It sends a tenant's jobs to the
 target whose region equals the tenant's region. A tenant whose region has no
-target fails with `PROVISIONING_ERROR`. CMK does not check the region itself:
-make sure that each region's CMK reads the queues of its own target.
+target fails with `PROVISIONING_ERROR`. Give each region its own pair of
+queues, and configure each region's CMK with the queues of its own target.
 
 ## Orbital
 
@@ -115,4 +116,4 @@ Orbital can sign task requests and responses. The signature travels in the
 `X-Message-Signature` header, and a receiver can be configured to reject
 messages without a valid signature.
 
-CMK and the Registry use Orbital.
+CMK, the Registry and the CMK-2-Krypton Bridge use Orbital.

@@ -81,8 +81,10 @@ Tenant onboarding and offboarding jobs arrive from the
 
 ## Processes
 
-CMK is one binary, `cmkd`, with a subcommand per process. Each runs as its own
-deployment.
+CMK is one binary, `cmkd`, with a subcommand per process. The Helm chart runs
+each process as its own Deployment, and `db-migrator` as Jobs before and after
+every install and upgrade. The API server serves the REST API on port 8081;
+every process serves its probes and metrics on port 8888.
 
 | Process | Purpose |
 | --- | --- |
@@ -112,16 +114,19 @@ certificate issuing.
 
 ## User interface
 
-The [CMK UI](https://github.com/openkcm/cmk-ui) is a SAPUI5 web application
+The [CMK UI](https://github.com/openkcm/cmk-ui) is an OpenUI5 web application
 that calls the CMK REST API. Users sign in through
 [Session Manager](/components/cmk/session-manager).
 
 ## Deployment
 
-CMK ships as a Helm chart, in the `charts/cmk` directory of the
+CMK ships as the Helm chart `oci://ghcr.io/openkcm/charts/cmk`, whose source
+is in the `charts/cmk` directory of the
 [cmk repository](https://github.com/openkcm/cmk/tree/main/charts/cmk). Its
 `values.yaml` documents every value, including each configuration key with the
-processes that read it. The container image includes the keystore plugins.
+processes that read it. The release image
+`ghcr.io/openkcm/cmk/images/cmk-full-plugins` includes the AWS KMS keystore
+plugin and the SCIM identity management plugins; see [Plugins](/components/cmk/plugins).
 
 - [CMK configuration reference](/components/cmk/security/cmk-config)
-- [Configuration guide](/components/cmk/security/configuration#step-5-configure-cmk)
+- [Install CMK in a regional deployment](/components/cmk/security/configuration#step-5-install-cmk)

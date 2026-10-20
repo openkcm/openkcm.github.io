@@ -73,14 +73,26 @@ The Registry offers gRPC only, on port 9092. Its services, defined in
 | `kms.api.cmk.registry.system.v1.Service` | `RegisterSystem`, `ListSystems`, `DeleteSystem`, `UpdateSystemStatus`, `UpdateSystemL1KeyClaim`, `SetSystemLabels`, `RemoveSystemLabels` |
 | `kms.api.cmk.registry.mapping.v1.Service` | `MapSystemToTenant`, `UnmapSystemFromTenant`, `Get` |
 
-The Registry does not authenticate its callers, and these calls create, block
-and terminate tenants. Allow only your onboarding tooling, your cloud services
-and the regional CMK deployments to reach it, with network policies and mutual
-TLS or a service mesh; see the [hardening checklist](/components/cmk/security/hardening).
+These calls create, block and terminate tenants. Allow only your onboarding
+tooling, your cloud services, the regional CMK deployments and the
+CMK-2-Krypton Bridges to reach the Registry, with network policies and a service
+mesh with mutual TLS; see the [hardening checklist](/components/cmk/security/hardening#internal-network).
 
-The examples below use `grpcurl` from a pod that may reach the Registry. If
-gRPC reflection is disabled, which is the chart default, pass the proto files
-from api-sdk with `-import-path` and `-proto`.
+The examples below use `grpcurl` from a pod that may reach the Registry. The
+Registry chart disables gRPC reflection, so add the proto files of
+[api-sdk](https://github.com/openkcm/api-sdk), in the version that the Registry
+uses, to every command:
+
+```bash
+git clone --depth 1 --branch v0.23.0 https://github.com/openkcm/api-sdk
+grpcurl -plaintext -import-path api-sdk/proto -import-path api-sdk/vendor-proto \
+  -proto kms/api/cmk/registry/tenant/v1/tenant.proto \
+  -d '{"id":"acme"}' registry.services.svc.cluster.local:9092 \
+  kms.api.cmk.registry.tenant.v1.Service/GetTenant
+```
+
+Each service has its own proto file, for example `auth/v1/auth.proto` for
+`ApplyAuth`. The examples below leave these options out for brevity.
 
 ## Step 1: Register the tenant
 
@@ -184,7 +196,7 @@ or to `AUTH_STATUS_APPLYING_ERROR` with an `error_message`. Check it with
   sign in until you apply an auth again.
 - Calling `ApplyAuth` again with the same `external_id` updates the record.
 - The properties are described in the
-  [configuration guide](/components/cmk/security/configuration#step-8-onboard-a-tenant).
+  [regional installation guide](/components/cmk/security/configuration#step-8-onboard-a-tenant).
 
 ## Step 3: Give the first administrator access
 

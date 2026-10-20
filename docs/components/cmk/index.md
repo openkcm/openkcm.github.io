@@ -1,9 +1,9 @@
 # CMK
 
-CMK (Customer-Managed Keys) is the OpenKCM product for governing customer keys.
+CMK (Customer-Managed Keys) is the OpenKCM component for governing customer keys.
 Tenants use it to manage their keys in their own keystores, link the keys to
 the systems that use them, and control who may do what. CMK consists of six
-services, plugins and shared libraries. For its cryptographic key operations,
+services, the optional Checker, plugins and shared libraries. For its cryptographic key operations,
 CMK requires [Krypton](/components/krypton/), which it drives through the
 CMK-2-Krypton Bridge.
 
@@ -20,7 +20,8 @@ who run it.
 | Automate CMK through its REST API | [CMK API](/components/cmk/api) |
 | Onboard a customer: register the tenant for its region, connect its identity provider, block or terminate it | [Connect a regional tenant](/components/cmk/tenant-integration) |
 | Make your cloud service receive key changes from CMK | [Connect a regional system](/components/cmk/system-integration) |
-| Plan and install a CMK deployment | [Deployment planning](/components/cmk/deployment), then the [configuration guide](/components/cmk/security/configuration) |
+| Plan and install a CMK deployment | [Deployment planning](/components/cmk/deployment), then [Install the Registry](/components/cmk/install-registry) and [Install a regional deployment](/components/cmk/security/configuration) |
+| Find the Helm charts and container images | [Releases](/releases/#artifacts) |
 | Run, upgrade and troubleshoot CMK | [Operations](/components/cmk/operations) |
 | Review how CMK protects access before going live | [Security architecture](/components/cmk/security/) and the [hardening checklist](/components/cmk/security/hardening) |
 
@@ -39,6 +40,7 @@ deployment. See [Deployment planning](/components/cmk/deployment#what-you-deploy
 | [ExtAuthZ](/components/cmk/extauthz) | Regional | Authenticates every API request, evaluates Cedar policies, signs client data | [extauthz][extauthz] |
 | [Session Manager](/components/cmk/session-manager) | Regional | OIDC login, browser sessions and per-tenant identity provider trust | [session-manager][sm] |
 | [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) | Regional | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [cmk-krypton-bridge][bridge] |
+| [Checker](/components/cmk/checker) | Optional, per cluster | Reports the health of the services, the cluster and the service mesh, and the versions of the services | [checker][checker] |
 
 ## How the services work together
 
@@ -116,6 +118,7 @@ which settings to review before going live.
 [extauthz]: https://github.com/openkcm/extauthz
 [sm]: https://github.com/openkcm/session-manager
 [bridge]: https://github.com/openkcm/cmk-krypton-bridge
+[checker]: https://github.com/openkcm/checker
 [plugin-sdk]: https://github.com/openkcm/plugin-sdk
 [ksp]: https://github.com/openkcm/keystore-plugins
 [imp]: https://github.com/openkcm/identity-management-plugins

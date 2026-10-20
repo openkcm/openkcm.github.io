@@ -1,23 +1,61 @@
-# Security configuration guide
+# Install a regional deployment
 
-This guide sets up authentication and authorization for the CMK services, step
-by step: secrets, identity provider, [Session Manager](/components/cmk/session-manager),
-[ExtAuthZ](/components/cmk/extauthz), [CMK](/components/cmk/cmk-service), the CMK UI and Envoy
-Gateway, and finally a tenant. It follows a reference deployment on Kubernetes
-with Envoy Gateway, Helm and a service mesh.
+This guide installs one regional deployment of CMK with Helm, step by step:
+the secrets, the identity provider, [Session Manager](/components/cmk/session-manager),
+[ExtAuthZ](/components/cmk/extauthz), [CMK](/components/cmk/cmk-service), the
+[CMK UI](/components/cmk/cmk-ui) and the Envoy Gateway routes, and finally a
+tenant. Each step ends with a check that it worked.
 
-Steps 1 to 7 set up **one regional deployment**; repeat them for every CMK
-region, each with its own hosts, secrets and databases. The central Registry is
-installed once; see [Deployment planning](/components/cmk/deployment#installation-order)
-and the [Registry configuration reference](/components/cmk/security/registry-config).
-Step 8 registers a tenant in the Registry for one of the regions.
+Install the central [Registry](/components/cmk/install-registry) first, and
+repeat this guide for every CMK region, each with its own hosts, secrets and
+databases. [Deployment planning](/components/cmk/deployment) explains what you
+deploy and why; the [request walkthrough](/components/cmk/security/walkthrough)
+shows the resulting HTTP exchanges.
 
-Every setting is described in detail in the
-[ExtAuthZ configuration reference](/components/cmk/security/extauthz-config), the
-[Session Manager configuration reference](/components/cmk/security/session-manager-config)
-and the [CMK configuration reference](/components/cmk/security/cmk-config).
-The [request walkthrough](/components/cmk/security/walkthrough) shows the resulting
-HTTP exchanges.
+## Before you start
+
+You need:
+
+- Kubernetes 1.23 or later, `kubectl`, Helm 3.8 or later, `openssl` and
+  [`grpcurl`](https://github.com/fullstorydev/grpcurl).
+- A service mesh with mutual TLS, for example Linkerd or Istio, for the
+  namespaces `envoy-gateway-system` and `services`. The services connect to each
+  other's gRPC APIs inside the mesh, which encrypts and authenticates the
+  traffic.
+- [Envoy Gateway](https://gateway.envoyproxy.io), the region's only public
+  entry point. This guide was written for Envoy Gateway 1.9:
+
+  ```bash
+  helm install eg oci://docker.io/envoyproxy/gateway-helm --version 1.9.2 \
+    --namespace envoy-gateway-system --create-namespace
+  ```
+
+- PostgreSQL with one database each for CMK and Session Manager, Valkey (or
+  Redis) with TLS, and the AMQP 1.0 broker that the Registry uses. On the broker,
+  create the queues of this region before you install:
+  `cmk.emea.tenants` and `cmk.emea.tenants.replies` for the tenant jobs of the
+  Registry, and one pair per system region, for example `cmk.eu10.requests`
+  and `cmk.eu10.replies`. The services authenticate at the broker with client
+  certificates (SASL `EXTERNAL`).
+- An OpenID Connect identity provider for each tenant, and an AWS account for
+  the keystores of your tenants' HYOK keys.
+- TLS certificates for the two public hosts of the region, and an OTLP
+  collector for audit events.
+
+The charts are OCI artifacts in the GitHub Container Registry; see
+[Releases](/releases/#artifacts). This guide uses these chart versions or later:
+
+| Chart | Version | Namespace |
+| --- | --- | --- |
+| `oci://ghcr.io/openkcm/charts/session-manager` | 0.11.0 | `services` |
+| `oci://ghcr.io/openkcm/charts/extauthz` | 0.15.0 | `envoy-gateway-system` |
+| `oci://ghcr.io/openkcm/charts/cmk` | 0.2.0 | `services` |
+| `oci://ghcr.io/openkcm/charts/cmk-ui` | 0.2.0 | `services` |
+| `oci://ghcr.io/openkcm/charts/checker` | 0.2.0 | `services` |
+
+Each chart's `values.yaml` documents every setting, with examples, and its
+`README.md` lists what it creates. The examples below set only what you must
+decide; everything else keeps the chart defaults.
 
 Replace these placeholders:
 
@@ -25,11 +63,17 @@ Replace these placeholders:
 | --- | --- |
 | `api.example.com` | Public host of the region's API gateway. Serves the CMK API and the Session Manager endpoints |
 | `ui.example.com` | Public host of the region's CMK UI |
-| `emea` | CMK region of this regional deployment |
 | `example.com` | Parent domain of both hosts |
+| `emea` | CMK region of this regional deployment |
+| `eu10` | A system region that this CMK serves |
 | `https://idp.example.com/realms/acme` | Issuer of the tenant's identity provider |
 | `acme` | Tenant ID |
-| `cmk-session-manager` | Client ID of Session Manager at the identity provider |
+| `cmk-session-manager` | Client ID of Session Manager at the identity providers |
+
+The examples install the Registry in the same cluster, in the namespace
+`services`. With the Registry in another cluster, CMK reaches it through a
+gateway or a multi-cluster mesh with mutual TLS; see
+[Deployment planning](/components/cmk/deployment#connections-between-the-deployments).
 
 ## Overview
 
@@ -40,18 +84,23 @@ flowchart LR
     E -- "ext_authz gRPC (9092)" --> X["ExtAuthZ"]
     X -- "GetSession gRPC (9091)" --> SM
     E -- "/cmk/v1 (8081)" --> C["CMK"]
+    E -- "ui host (8080)" --> UI["CMK UI"]
     C -- "trust records gRPC (9091)" --> SM
+    C -- "gRPC (9092)" --> R["Registry"]
+    R -- "tenant jobs (AMQP)" --> C
     SM --> V[("Valkey")]
     SM --> P[("PostgreSQL")]
     SM -- "OIDC" --> I["Tenant IdP"]
     X -- "JWKS, introspection" --> I
 ```
 
-| Component | Namespace in the reference deployment | Ports |
+| Component | Namespace | Ports |
 | --- | --- | --- |
 | Envoy Gateway, ExtAuthZ | `envoy-gateway-system` | ExtAuthZ: gRPC 9092, status 8080 |
-| Session Manager, CMK, CMK UI | `services` | Session Manager: HTTP 8080, gRPC 9091, status 8888. CMK: HTTP 8081 |
-| Registry (central deployment) | `services` of the central cluster | gRPC 9092, status 8888. Reached by CMK at `registry.services.svc.cluster.local:9092` in the examples |
+| Session Manager | `services` | HTTP 8080, gRPC 9091, status 8888 |
+| CMK | `services` | HTTP 8081, status 8888 |
+| CMK UI | `services` | HTTP 8080 |
+| Registry (central deployment) | `services` | gRPC 9092, status 8888 |
 | Valkey | `storage` | 6379 |
 
 ### Settings that must match
@@ -60,16 +109,19 @@ flowchart LR
 | --- | --- | --- |
 | CSRF secret | Session Manager `sessionManager.csrfSecret`, ExtAuthZ `csrfSecret` | **The same secret in both services**: identical bytes, at least 32. See [Shared CSRF secret](#shared-csrf-secret) |
 | Client data signing keys | ExtAuthZ `clientData.signingKeyIDFilePath`, CMK `clientData.signingKeysPath` | ExtAuthZ's `keyId` file names the active key, for example `key1`. ExtAuthZ has the private key `key1.pem`, CMK the matching public key under the **same** name `key1.pem`. See [Signing keys](/components/cmk/security/client-data#signing-keys) |
+| Tenant jobs | CMK `tenantManager.amqp.source` and `target`, Registry `orbital.targets[].connection.amqp.target` and `source` | CMK's `source` is the Registry's `target`, and the other way round. One pair per CMK region |
+| CMK region | Registry `orbital.targets[].region`, the tenant's `region`, CMK `landscape.region` | The same name, for example `emea` |
 | Session cookie name | Session Manager `sessionCookieTemplate.name` | `__Host-Http-SESSION`. ExtAuthZ reads `__Host-Http-SESSION-<tenant>` |
 | CSRF cookie name | Session Manager `csrfCookieTemplate.name` | `CSRF`. The CMK UI reads `CSRF-<tenant>` |
 | Session paths | ExtAuthZ `sessionPathPrefixes` | `/cmk/v1/`, the CMK API base path; the next segment is the tenant |
-| Session Manager address | ExtAuthZ `sessionManager.address`, CMK `services.sessionManager.address` | Session Manager's `grpc.address` |
+| Session Manager address | ExtAuthZ `sessionManager.address`, CMK `services.sessionManager.address` | Session Manager's gRPC Service, port 9091 |
+| Registry address | CMK `services.registry.address` | The Registry's gRPC API, port 9092 |
 | API host | CMK UI `apiBaseUrl` | One host for `/cmk/v1` and `/sm/*` |
 | Return URLs | Session Manager `allowedRedirectBaseURLs` | The CMK UI origin, ending with `/` |
 | Callback URL | Session Manager `callbackURL` | `https://api.example.com/sm/callback`, registered at every identity provider |
 | Browser origin | CORS of the CMK `SecurityPolicy` | `https://ui.example.com` |
 | Group names | Identity provider `groups` claim | CMK group identifiers, for example `KMS_TenantAdministrator_<tenant>` |
-| Issuer for tenant lookup | CMK `clientData.authContextFields` | Must contain `issuer` |
+| Issuer for tenant lookup | CMK `clientData.authContextFields` | Must contain `issuer` (the chart default) |
 
 ## Shared CSRF secret
 
@@ -101,57 +153,16 @@ Only the same secret produces the same token.
 | Requirement | Detail |
 | --- | --- |
 | Identical | Byte for byte the same in both services. A trailing newline in one of the files is already a difference |
-| Length | At least 32 bytes. Session Manager does not start with a shorter secret; ExtAuthZ does not check the length |
+| Length | At least 32 bytes. Session Manager does not start with a shorter secret |
 | Random | Generated with a cryptographic random generator, for example `openssl rand` |
 | Stored as a secret | In a Kubernetes Secret mounted as a file, never inline in the configuration |
 
-### Configuration
+### One value, two Kubernetes Secrets
 
-Both services read the secret from a file. Use the same file content, and
-preferably the same mount path, in both. Note the different nesting: in Session
-Manager the setting is inside `sessionManager`, in ExtAuthZ it is at the top
-level.
-
-Session Manager:
-
-```yaml
-config:
-  sessionManager:
-    csrfSecret:                 # same secret as ExtAuthZ csrfSecret
-      source: file
-      file:
-        path: /etc/credentials/csrf-secret/csrf_secret
-        format: binary
-```
-
-ExtAuthZ:
-
-```yaml
-config:
-  csrfSecret:                   # same secret as Session Manager sessionManager.csrfSecret
-    source: file
-    file:
-      path: /etc/credentials/csrf-secret/csrf_secret
-      format: binary
-```
-
-### One value, one or two Kubernetes Secrets
-
-A pod can only mount Secrets from its own namespace:
-
-- If ExtAuthZ and Session Manager run in the **same namespace**, create one
-  Secret and mount it into both.
-- If they run in **different namespaces**, as in the reference deployment
-  (`envoy-gateway-system` and `services`), create a Secret in each namespace
-  from the **same file**, or let a secret synchronization tool copy one Secret
-  to the other namespace.
-
-```bash
-openssl rand -hex 32 | tr -d '\n' > csrf_secret
-kubectl -n envoy-gateway-system create secret generic csrf-secret --from-file=csrf_secret
-kubectl -n services create secret generic csrf-secret --from-file=csrf_secret
-rm csrf_secret
-```
+A pod can mount Secrets only from its own namespace. ExtAuthZ runs in
+`envoy-gateway-system` and Session Manager in `services`, so create a Secret in
+each namespace from the **same file**, or let a secret synchronization tool copy
+one Secret to the other namespace. Step 1 creates both.
 
 ### Check that both services use the same secret
 
@@ -177,92 +188,99 @@ Both services read the secret only at startup.
 
 ## Configuration conventions
 
-All OpenKCM services read a YAML file that their Helm charts render from the
-`config` value.
+All OpenKCM services read a YAML file, `config.yaml`, that their Helm charts
+render from the `config` value and mount into the pods.
 
 ### Values from files, environment or inline
 
-Settings that may hold secrets accept a value reference:
-
-| Field | Meaning |
-| --- | --- |
-| `source` | `embedded` (default), `env` or `file` |
-| `value` | The value itself, for `embedded` |
-| `env` | Name of the environment variable, for `env` |
-| `file.path` | Path of the file, for `file` |
-| `file.format` | `binary` (the whole file, byte for byte), `json` or `yaml` |
-| `file.jsonPath` | Path to the value inside a `json` or `yaml` file |
+Settings that may hold secrets accept a *value reference*:
 
 ```yaml
 password:
-  source: file
+  source: file                 # embedded (the default), env or file
   file:
     path: /etc/credentials/valkey/password
-    format: binary
+    format: binary             # binary: the whole file; json: see jsonPath
 ```
 
-With `format: binary`, a trailing newline in the file is part of the value.
-Create secret files without one.
+| Form | Meaning |
+| --- | --- |
+| `{ source: embedded, value: "…" }` | The value itself. It is stored in plain text in the ConfigMap: use it only for values that are not secret |
+| `{ source: env, env: NAME }` | An environment variable of the container |
+| `{ source: file, file: { path: …, format: binary } }` | The whole file. A trailing newline is part of the value, so create secret files without one, for example with `kubectl create secret generic … --from-literal` |
+| `{ source: file, file: { path: …, format: json, jsonPath: "$.password" } }` | One string field of a JSON file, selected in dot notation from `$`, for example `$.auth.password` |
 
 ### Credentials for outgoing connections
 
-| `type` | Meaning | Fields |
-| --- | --- | --- |
-| `insecure` | No transport security | - |
-| `mtls` | Mutual TLS | `mtls.cert`, `mtls.certKey`, `mtls.serverCa`, `mtls.rootCAs`, `mtls.attributes.serverName` |
-| `api-token` | Bearer token | `apiToken` |
-| `basic` | Basic authentication | `basic.username`, `basic.password` |
-| `oauth2` | OAuth 2.0 client credentials | `oauth2.url`, `oauth2.credentials`, `oauth2.mtls` |
+Connections take a `secretRef` with a `type`. Which types a connection accepts
+is documented at the setting in the chart's `values.yaml`:
 
-Which types a connection supports is listed in the references. Use `insecure`
-only inside a service mesh that encrypts and authenticates traffic between pods.
+| `type` | Meaning |
+| --- | --- |
+| `insecure` | No transport security of its own. Use it for the gRPC connections between the services inside the service mesh, which provides mutual TLS |
+| `mtls` | TLS with a client certificate: `mtls.cert`, `mtls.certKey`, `mtls.serverCa`, optionally `mtls.rootCAs` and `mtls.attributes.serverName`. Use it for Valkey, the AMQP broker and connections that leave the mesh |
+| `api-token` | Sends `Authorization: Api-Token <token>` (telemetry) |
+| `basic`, `oauth2` | Basic authentication or OAuth 2.0 client credentials, where supported |
+
+Mount Secrets with `defaultMode: 0440`: all pods run as user and group 65532
+with `fsGroup: 65532`, so they can read these files.
 
 ## Step 1: Create the secrets
 
 Generate the CSRF secret that ExtAuthZ and Session Manager **share**, without a
-trailing newline (see [Shared CSRF secret](#shared-csrf-secret)):
+trailing newline (see [Shared CSRF secret](#shared-csrf-secret)), and the client
+data signing key pair with its key ID file:
 
 ```bash
 openssl rand -hex 32 | tr -d '\n' > csrf_secret
-```
 
-Generate the client data signing key pair and the key ID file:
-
-```bash
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out key1.pem
 openssl pkey -in key1.pem -pubout -out key1.pub.pem
 printf 'key1' > keyId
-
-# Check that the public key belongs to the private key: prints nothing if it does
-diff <(openssl pkey -in key1.pem -pubout) key1.pub.pem
 ```
 
-Create the Kubernetes secrets. Both CSRF Secrets are created from the **same**
-`csrf_secret` file: one for ExtAuthZ, one for Session Manager. ExtAuthZ gets the
-private signing key, CMK the public key under the same file name:
+Create the Secrets of ExtAuthZ, in `envoy-gateway-system`. ExtAuthZ gets the
+private signing key:
 
 ```bash
-# Same CSRF secret for ExtAuthZ (envoy-gateway-system) and Session Manager (services)
 kubectl -n envoy-gateway-system create secret generic csrf-secret --from-file=csrf_secret
-kubectl -n services create secret generic csrf-secret --from-file=csrf_secret
-
 kubectl -n envoy-gateway-system create secret generic extauthz-signing-keys-secret \
   --from-file=keyId --from-file=key1.pem
-kubectl -n services create secret generic cmk-client-data-public-keys \
-  --from-file=key1.pem=key1.pub.pem
 ```
 
-Also create, in `services`, the secrets for Session Manager's database and
-Valkey credentials and for its client credentials at the identity providers
-(client secret, or client certificate and key), and CMK's database credentials
-and AMQP client certificate (`cmk-database`, `cmk-rabbitmq-client` and
-`rabbitmq-ca` in [Step 5](#step-5-configure-cmk)).
+Create the Secrets of Session Manager and CMK, in `services`. CMK gets the
+public key, under the same file name as ExtAuthZ's private key:
+
+```bash
+kubectl -n services create secret generic csrf-secret --from-file=csrf_secret
+kubectl -n services create secret generic cmk-client-data-public-keys \
+  --from-file=key1.pem=key1.pub.pem
+
+kubectl -n services create secret generic session-manager-database \
+  --from-literal=password='<password>' --from-file=ca.crt=postgresql-ca.crt
+kubectl -n services create secret generic session-manager-valkey \
+  --from-literal=password='<password>' --from-file=ca.crt=valkey-ca.crt \
+  --from-file=tls.crt=session-manager-valkey.crt --from-file=tls.key=session-manager-valkey.key
+kubectl -n services create secret generic session-manager-oidc-client \
+  --from-literal=client-secret='<client secret from Step 2>'
+
+kubectl -n services create secret generic cmk-database \
+  --from-literal=password='<password>' --from-file=ca.crt=postgresql-ca.crt
+kubectl -n services create secret generic cmk-valkey \
+  --from-literal=password='<password>' --from-file=ca.crt=valkey-ca.crt \
+  --from-file=tls.crt=cmk-valkey.crt --from-file=tls.key=cmk-valkey.key
+kubectl -n services create secret generic cmk-broker \
+  --from-file=tls.crt=cmk-broker.crt --from-file=tls.key=cmk-broker.key \
+  --from-file=ca.crt=broker-ca.crt
+```
+
+`--from-literal` writes no trailing newline, which the services require for
+passwords. Delete the generated key files once the Secrets exist.
 
 ::: warning
 The two `csrf-secret` Secrets must always hold the same value. Nothing keeps
 them in sync: when you change one, change the other and restart both services,
-as described in [Rotate the secret](#rotate-the-secret). Delete the generated
-files after you have created the secrets.
+as described in [Rotate the secret](#rotate-the-secret).
 :::
 
 ## Step 2: Register Session Manager at the identity provider
@@ -317,49 +335,63 @@ See [Groups and identity provider claims](/components/cmk/security/cmk-authoriza
 1. Assign the `groups` scope to the client.
 1. Create the groups `KMS_TenantAdministrator_acme` and
    `KMS_TenantAuditor_acme`, and add the tenant's administrators and auditors.
-1. Copy the client secret into the Session Manager secret.
+1. Put the client secret into the `session-manager-oidc-client` Secret of
+   Step 1.
 
-## Step 3: Configure Session Manager
+## Step 3: Install Session Manager
 
-Helm values:
+Create `session-manager-values.yaml`:
 
 ```yaml
-config:
-  logger:
-    level: info
-  status:
-    enabled: true
-  http:
-    address: :8080
-  grpc:
-    address: :9091
-    flags:
-      health: true
-      reflection: false
+replicaCount: 2
 
+pod:
+  disruptionBudget:
+    enabled: true
+
+networkPolicy:
+  enabled: true
+  http:
+    from:
+      - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system } }
+  grpc:
+    from:
+      - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system } }
+        podSelector: { matchLabels: { app.kubernetes.io/name: extauthz } }
+      - podSelector: { matchLabels: { app.kubernetes.io/part-of: cmk } }   # every CMK process
+
+extraEnvs:
+  - { name: PGSSLMODE, value: verify-full }
+  - { name: PGSSLROOTCERT, value: /etc/credentials/database/ca.crt }
+
+extraVolumes:
+  - name: credentials
+    projected:
+      defaultMode: 0440
+      sources:
+        - secret: { name: session-manager-database, items: [{ key: password, path: database/password }, { key: ca.crt, path: database/ca.crt }] }
+        - secret: { name: session-manager-valkey, items: [{ key: password, path: valkey/password }, { key: tls.crt, path: valkey/tls.crt }, { key: tls.key, path: valkey/tls.key }, { key: ca.crt, path: valkey/ca.crt }] }
+        - secret: { name: session-manager-oidc-client, items: [{ key: client-secret, path: client-auth/client-secret }] }
+        - secret: { name: csrf-secret, items: [{ key: csrf_secret, path: csrf-secret/csrf_secret }] }
+extraVolumeMounts:
+  - { name: credentials, mountPath: /etc/credentials, readOnly: true }
+
+config:
   database:
     host: { value: postgresql.services.svc.cluster.local }
-    port: "5432"
-    name: session_manager
-    user:     { source: file, file: { path: /etc/credentials/database/username, format: binary } }
+    user: { value: session_manager }
     password: { source: file, file: { path: /etc/credentials/database/password, format: binary } }
-
   valkey:
     host: { value: valkey-primary.storage.svc.cluster.local:6379 }
-    user: { value: default }
     password: { source: file, file: { path: /etc/credentials/valkey/password, format: binary } }
-    prefix: session-manager
     secretRef:
       type: mtls
       mtls:
         cert:     { source: file, file: { path: /etc/credentials/valkey/tls.crt, format: binary } }
         certKey:  { source: file, file: { path: /etc/credentials/valkey/tls.key, format: binary } }
         serverCa: { source: file, file: { path: /etc/credentials/valkey/ca.crt, format: binary } }
-
   sessionManager:
     callbackURL: https://api.example.com/sm/callback
-    sessionDuration: 12h
-    idleSessionTimeout: 15m
     allowedRedirectBaseURLs:
       - https://ui.example.com/
     csrfSecret:                 # same secret as ExtAuthZ csrfSecret (Step 4)
@@ -368,180 +400,60 @@ config:
     clientAuth:
       type: client_secret
       clientID: cmk-session-manager
-      clientSecret:
-        source: file
-        file: { path: /etc/credentials/client-auth/client-secret, format: binary }
+      clientSecret: { source: file, file: { path: /etc/credentials/client-auth/client-secret, format: binary } }
     sessionCookieTemplate:
-      name: __Host-Http-SESSION
-      path: /
-      secure: true
-      httpOnly: true
-      sameSite: None
+      sameSite: Lax             # the UI and API hosts share example.com
     csrfCookieTemplate:
-      name: CSRF
-      path: /
       domain: example.com
-      secure: true
-      sameSite: Strict
-    loginCSRFCookieTemplate:
-      path: /
-      secure: true
-      httpOnly: true
-      sameSite: Lax
-
-  apps:
-    grpc:
-      module: app.module.grpcserver
-      services:
-        - module: service.module.grpc.session
-        - module: service.module.grpc.trustmapping
-        - module: service.module.grpc.oidcmapping
-
   audit:
-    endpoint: https://otel-collector.example.com/v1/logs
-
-extraVolumes:
-  - name: db-credentials
-    secret: { secretName: session-manager-db }
-  - name: valkey-credentials
-    secret: { secretName: session-manager-valkey }
-  - name: csrf-secret
-    secret: { secretName: csrf-secret }
-  - name: client-auth
-    secret: { secretName: session-manager-client-auth }
-extraVolumeMounts:
-  - { name: db-credentials,     mountPath: /etc/credentials/database,    readOnly: true }
-  - { name: valkey-credentials, mountPath: /etc/credentials/valkey,      readOnly: true }
-  - { name: csrf-secret,        mountPath: /etc/credentials/csrf-secret, readOnly: true }   # shared with ExtAuthZ
-  - { name: client-auth,        mountPath: /etc/credentials/client-auth, readOnly: true }
+    endpoint: http://otel-collector.observability.svc:4318/v1/logs
 ```
 
-Notes:
+Install it:
+
+```bash
+helm upgrade --install session-manager oci://ghcr.io/openkcm/charts/session-manager \
+  --version 0.11.0 --namespace services -f session-manager-values.yaml
+```
+
+The chart runs the database migration as a Helm hook before the pods start.
 
 - `sessionManager.csrfSecret` must be **the same secret as ExtAuthZ's
-  `csrfSecret`** (Step 4). Mount the `csrf-secret` Secret created from the same
-  file in Step 1. See [Shared CSRF secret](#shared-csrf-secret).
-- Session Manager reads its configuration only from `/etc/session-manager`.
-  Chart 0.11.0 and later always mount it there; with older charts, do not set
-  `nameOverride`.
-- `clientAuth.clientID` is required by the migration job even though each
-  tenant's client ID comes from its trust record.
+  `csrfSecret`** (Step 4).
+- `clientAuth.clientID` is required at the first installation: the migration
+  copies it into existing trust records. Each tenant's client ID comes from its
+  trust record later.
 - The client secret or certificate is the same for all tenants.
-- Session Manager does not report unknown keys. Compare your file with the
-  [reference](/components/cmk/security/session-manager-config) when something has
-  no effect.
+- Session Manager ignores unknown keys without a warning. If a setting has no
+  effect, compare its spelling with the chart's [values.yaml][sm-values] and the
+  [Session Manager configuration reference](/components/cmk/security/session-manager-config).
 
-## Step 4: Configure ExtAuthZ
+**Check:** the release notes list no warnings, and the pods are ready:
 
-Helm values:
-
-```yaml
-config:
-  logger:
-    level: info
-    format: json
-  status:
-    enabled: true
-    address: :8080
-    profiling: false
-  featureGates:
-    enrich-header-with-client-type: true
-    enrich-header-with-client-region: true
-
-  grpcServer:
-    address: :9092
-    flags:
-      health: true
-
-  cedar:
-    policyPath: /etc/extauthz-policies
-  mtls:
-    trustedSubjectsYaml: /etc/extauthz-mtls/trustedSubjects.yaml
-
-  jwt:
-    issuerClaimKeys: [iss]
-    providers:
-      - issuer: https://idp.example.com/realms/automation
-        audiences: [cmk-api]
-    httpClient:
-      basicAuth:
-        username: { source: file, file: { path: /etc/credentials/idp/client-id, format: binary } }
-        password: { source: file, file: { path: /etc/credentials/idp/client-secret, format: binary } }
-    oauth2:
-      credentials:
-        authMethod: post
-        clientSecret: { source: file, file: { path: /etc/credentials/tenant-idp/client-secret, format: binary } }
-
-  sessionPathPrefixes: ["/cmk/v1/"]
-  sessionManager:
-    enabled: true
-    address: session-manager.services.svc.cluster.local:9091
-    secretRef:
-      type: insecure        # the service mesh provides mutual TLS
-
-  clientData:
-    signingKeyIDFilePath: /etc/extauthz-signing/keyId
-
-  csrfSecret:                   # same secret as Session Manager sessionManager.csrfSecret (Step 3)
-    source: file
-    file: { path: /etc/credentials/csrf-secret/csrf_secret, format: binary }
-
-  audit:
-    endpoint: https://otel-collector.example.com/v1/logs
-
-extraPorts:
-  - { name: grpc,        containerPort: 9092, protocol: TCP }
-  - { name: http-status, containerPort: 8080, protocol: TCP }
-livenessProbe:
-  httpGet: { path: /probe/liveness, port: http-status }
-readinessProbe:
-  httpGet: { path: /probe/readiness, port: http-status }
-
-extraVolumes:
-  - name: extauthz-policies
-    projected:
-      sources:
-        - configMap: { name: extauthz-user-policies }
-        - configMap: { name: extauthz-system-policies }
-  - name: extauthz-trusted-subjects
-    configMap: { name: extauthz-trusted-subjects }
-  - name: extauthz-signing-keys
-    secret: { secretName: extauthz-signing-keys-secret }
-  - name: csrf-secret
-    secret: { secretName: csrf-secret }
-  - name: idp-credentials
-    secret: { secretName: extauthz-idp-credentials }
-  - name: tenant-idp-credentials
-    secret: { secretName: extauthz-tenant-idp-credentials }
-extraVolumeMounts:
-  - { name: extauthz-policies,         mountPath: /etc/extauthz-policies,      readOnly: true }
-  - { name: extauthz-trusted-subjects, mountPath: /etc/extauthz-mtls,          readOnly: true }
-  - { name: extauthz-signing-keys,     mountPath: /etc/extauthz-signing,       readOnly: true }
-  - { name: csrf-secret,               mountPath: /etc/credentials/csrf-secret, readOnly: true }   # shared with Session Manager
-  - { name: idp-credentials,           mountPath: /etc/credentials/idp,        readOnly: true }
-  - { name: tenant-idp-credentials,    mountPath: /etc/credentials/tenant-idp, readOnly: true }
+```bash
+kubectl -n services rollout status deployment/session-manager
+kubectl -n services rollout status deployment/session-manager-housekeeper
 ```
 
-Setting `extraVolumes` replaces the chart's default volumes, so the example
-lists all of them.
+If the migration fails, its log is in the Job `session-manager-migrate`, which is
+kept for five minutes.
 
-- `csrfSecret` must be **the same secret as Session Manager's
-  `sessionManager.csrfSecret`** (Step 3). See [Shared CSRF secret](#shared-csrf-secret).
-- `jwt.providers` lists issuers that are trusted for all tenants, typically the
-  platform's own identity provider for automation. Tenant identity providers
-  come from the trust records and need no entry here.
-- `jwt.httpClient` authenticates introspection at the static providers;
-  `jwt.oauth2` authenticates introspection at tenant identity providers.
+## Step 4: Install ExtAuthZ
+
+ExtAuthZ reads its Cedar policies, the trusted client certificate subjects and
+the signing key from objects that you create in `envoy-gateway-system`; the
+chart mounts them.
 
 ### Cedar policies
 
-Policies are mounted from ConfigMaps. The file names must end in `.cedar`:
+The policies decide which callers may call which paths. Create them in two
+ConfigMaps; the file names must end in `.cedar`:
 
 ```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: extauthz-user-policies
+  name: extauthz-users-policies
   namespace: envoy-gateway-system
 data:
   users.cedar: |
@@ -570,21 +482,10 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: extauthz-system-policies
+  name: extauthz-systems-policies
   namespace: envoy-gateway-system
 data:
   systems.cedar: |
-    // Automation with tokens from the platform identity provider
-    permit (
-        principal == Subject::"svc-automation",
-        action in [Action::"GET", Action::"POST"],
-        resource
-    ) when {
-        context.type == "jwt" &&
-        context.issuer == "https://idp.example.com/realms/automation" &&
-        context.path like "/cmk/v1/*"
-    };
-
     // Billing service with a client certificate
     permit (
         principal == Subject::"CN=billing-service,O=Example Corp,C=DE",
@@ -598,7 +499,9 @@ data:
 
 The tenant JWT policy needs no issuer condition: a token from a tenant identity
 provider is only accepted for that tenant's paths, because ExtAuthZ looks up the
-provider by the tenant ID in the path.
+provider by the tenant ID in the path. The
+[ExtAuthZ configuration reference](/components/cmk/security/extauthz-config)
+describes the request attributes that policies can use.
 
 ### Trusted subjects
 
@@ -615,129 +518,247 @@ data:
 ```
 
 Write subjects as Envoy formats them: most specific attribute first, commas
-without spaces. If you have no certificate clients, use `trustedSubjects.yaml: "{}"`.
+without spaces. If you have no certificate clients, use
+`trustedSubjects.yaml: "{}"`.
 
-ExtAuthZ reads policies and trusted subjects only at startup. Restart it after
-every change:
+### Values
 
-```bash
-kubectl -n envoy-gateway-system rollout restart deployment/extauthz
-```
-
-## Step 5: Configure CMK
-
-CMK runs several processes from one image: API server, tenant manager, event
-reconciler, task scheduler and task worker. The chart deploys all of them, starts
-each with its subcommand, and gives each a ConfigMap with the sections of
-`config` that it reads. The chart's `values.yaml` documents every key under
-`config`, with its default and the processes that read it. The
-security-relevant settings:
+Create `extauthz-values.yaml`. Setting `extraVolumes` and `extraVolumeMounts`
+replaces the chart's defaults, so the example repeats the three default entries
+and adds the CSRF secret:
 
 ```yaml
-image:
-  tag: v0.11.0
+replicaCount: 2
+
+networkPolicy:
+  enabled: true
+  grpc:
+    from:
+      - podSelector: { matchLabels: { app.kubernetes.io/name: envoy } }
+
+extraVolumes:
+  - name: extauthz-trusted-subjects-volume
+    configMap: { name: extauthz-trusted-subjects }
+  - name: extauthz-policies-volume
+    projected:
+      sources:
+        - configMap: { name: extauthz-systems-policies }
+        - configMap: { name: extauthz-users-policies }
+  - name: extauthz-signing-keys-volume
+    projected:
+      defaultMode: 0440
+      sources:
+        - secret: { name: extauthz-signing-keys-secret }
+  - name: csrf-secret
+    secret:
+      secretName: csrf-secret
+      items: [{ key: csrf_secret, path: csrf_secret }]
+      defaultMode: 0440
+extraVolumeMounts:
+  - { name: extauthz-trusted-subjects-volume, mountPath: /etc/extauthz-mtls, readOnly: true }
+  - { name: extauthz-policies-volume, mountPath: /etc/extauthz-policies, readOnly: true }
+  - { name: extauthz-signing-keys-volume, mountPath: /etc/extauthz-signing, readOnly: true }
+  - { name: csrf-secret, mountPath: /etc/credentials/csrf-secret, readOnly: true }
 
 config:
-  logger:
-    level: info                 # debug logs the complete configuration
+  sessionManager:
+    enabled: true
+    address: session-manager.services.svc.cluster.local:9091
+    secretRef: { type: insecure }    # inside a service mesh with mutual TLS
+  csrfSecret:                        # same secret as Session Manager (Step 3)
+    source: file
+    file: { path: /etc/credentials/csrf-secret/csrf_secret, format: binary }
+  audit:
+    endpoint: http://otel-collector.observability.svc:4318/v1/logs
+```
+
+Install it:
+
+```bash
+helm upgrade --install extauthz oci://ghcr.io/openkcm/charts/extauthz \
+  --version 0.15.0 --namespace envoy-gateway-system -f extauthz-values.yaml
+```
+
+- `csrfSecret` must be **the same secret as Session Manager's
+  `sessionManager.csrfSecret`**.
+- To accept bearer tokens from your platform's own identity provider, for
+  example for automation, add it to `config.jwt.providers`. Tokens from a
+  tenant's identity provider need no entry: ExtAuthZ uses the provider of the
+  tenant's trust record. See the
+  [ExtAuthZ configuration reference](/components/cmk/security/extauthz-config).
+- ExtAuthZ reads policies and trusted subjects only at startup. Restart it after
+  every change:
+
+  ```bash
+  kubectl -n envoy-gateway-system rollout restart deployment/extauthz
+  ```
+
+**Check:** the release notes list no warnings, and the pods are ready:
+
+```bash
+kubectl -n envoy-gateway-system rollout status deployment/extauthz
+```
+
+## Step 5: Install CMK
+
+CMK runs several processes from one image: the API server, the tenant manager,
+the event reconciler, the task scheduler and the task worker. The chart deploys
+all of them and gives each a ConfigMap with the sections of `config` that it
+reads.
+
+Create `cmk-values.yaml`:
+
+```yaml
+apiServer:
+  replicaCount: 2
+
+podDisruptionBudget:
+  enabled: true
+
+networkPolicy:
+  enabled: true
   http:
-    swaggerEnabled: false
+    from:
+      - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system } }
 
-  clientData:
-    signingKeysPath: /etc/signing-keys
-    authContextFields:
-      - issuer                  # required: CMK lists a user's tenants by issuer
-      - client_id
+extraVolumes:
+  - name: credentials
+    projected:
+      defaultMode: 0440
+      sources:
+        - secret: { name: cmk-database, items: [{ key: password, path: database/password }, { key: ca.crt, path: database/ca.crt }] }
+        - secret: { name: cmk-valkey, items: [{ key: password, path: valkey/password }, { key: tls.crt, path: valkey/tls.crt }, { key: tls.key, path: valkey/tls.key }, { key: ca.crt, path: valkey/ca.crt }] }
+        - secret: { name: cmk-broker, items: [{ key: tls.crt, path: broker/tls.crt }, { key: tls.key, path: broker/tls.key }, { key: ca.crt, path: broker/ca.crt }] }
+  - name: client-data-public-keys
+    secret: { secretName: cmk-client-data-public-keys, defaultMode: 0440 }   # ExtAuthZ's public keys
+extraVolumeMounts:
+  - { name: credentials, mountPath: /etc/credentials, readOnly: true }
+  - { name: client-data-public-keys, mountPath: /etc/signing-keys, readOnly: true }
 
-  services:
-    sessionManager:             # tenant manager writes tenant trust records here
-      enabled: true
-      address: session-manager.services.svc.cluster.local:9091
-      secretRef: { type: insecure }   # the service mesh provides mutual TLS
-    registry:
-      enabled: true
-      address: registry.services.svc.cluster.local:9092
-      secretRef: { type: insecure }
-
+config:
+  landscape:
+    name: cmk-emea
+    region: emea
+    uiBaseUrl: https://ui.example.com/#
   database:
     host: { value: postgresql.services.svc.cluster.local }
-    port: "5432"
-    name: cmk
-    user:   { source: file, file: { path: /etc/credentials/database/username, format: binary } }
+    user: { value: cmk }
     secret: { source: file, file: { path: /etc/credentials/database/password, format: binary } }
     parameters:
       ssl:
-        mode: verify-full
         rootCert: /etc/credentials/database/ca.crt
-
-  tenantManager:                # tenant jobs from the central Registry for region emea
+  scheduler:
+    taskQueue:
+      host: { value: valkey-primary.storage.svc.cluster.local }   # host only; port: "6379"
+      acl:
+        enabled: true
+        username: { value: default }
+        password: { source: file, file: { path: /etc/credentials/valkey/password, format: binary } }
+      secretRef:
+        type: mtls
+        mtls:
+          cert:     { source: file, file: { path: /etc/credentials/valkey/tls.crt, format: binary } }
+          certKey:  { source: file, file: { path: /etc/credentials/valkey/tls.key, format: binary } }
+          serverCa: { source: file, file: { path: /etc/credentials/valkey/ca.crt, format: binary } }
+  services:
+    registry:
+      enabled: true
+      address: registry.services.svc.cluster.local:9092
+      secretRef: { type: insecure }    # inside a service mesh with mutual TLS
+    sessionManager:                    # the tenant manager writes tenant trust records here
+      enabled: true
+      address: session-manager.services.svc.cluster.local:9091
+      secretRef: { type: insecure }    # inside a service mesh with mutual TLS
+  tenantManager:                       # tenant jobs from the Registry for region emea
     secretRef:
       type: mtls
       mtls:
-        cert:     { source: file, file: { path: /etc/credentials/rabbitmq/tls.crt, format: binary } }
-        certKey:  { source: file, file: { path: /etc/credentials/rabbitmq/tls.key, format: binary } }
-        serverCa: { source: file, file: { path: /etc/credentials/rabbitmq-ca/ca.crt, format: binary } }
+        cert:     { source: file, file: { path: /etc/credentials/broker/tls.crt, format: binary } }
+        certKey:  { source: file, file: { path: /etc/credentials/broker/tls.key, format: binary } }
+        serverCa: { source: file, file: { path: /etc/credentials/broker/ca.crt, format: binary } }
     amqp:
-      url: amqps://rabbitmq.services.svc.cluster.local:5671   # amqps:// is required for TLS
-      source: /queues/cmk.tenants.requests
-      target: /exchanges/cmk/mesh.tenants
-
+      url: amqps://rabbitmq.services.svc.cluster.local:5671
+      source: /queues/cmk.emea.tenants           # Registry target of region emea
+      target: /queues/cmk.emea.tenants.replies   # Registry source of region emea
+  eventProcessor:                      # key and system tasks for the system regions
+    secretRef:
+      type: mtls
+      mtls:
+        cert:     { source: file, file: { path: /etc/credentials/broker/tls.crt, format: binary } }
+        certKey:  { source: file, file: { path: /etc/credentials/broker/tls.key, format: binary } }
+        serverCa: { source: file, file: { path: /etc/credentials/broker/ca.crt, format: binary } }
+    targets:
+      - region: eu10
+        amqp:
+          url: amqps://rabbitmq.services.svc.cluster.local:5671
+          target: /queues/cmk.eu10.requests
+          source: /queues/cmk.eu10.replies
   plugins:
-    - name: scim
-      type: IdentityManagementService
+    - name: AWS                        # keystores in AWS KMS, for HYOK keys
+      type: KeystoreInstanceKeyOperation
+      path: /etc/plugins/keystore/keystoreop-aws
+      tags: [default_keystore, hyok]
       yamlConfiguration: |
-        # SCIM directory of the tenants
-    # plus the keystore plugins, and the NotificationService and
-    # SystemInformationService plugins that the task worker requires
-
+        auth:
+          method: perRequest
+    - { name: noop, type: IdentityManagementService }
+    - { name: noop, type: NotificationService }
+    - { name: noop, type: SystemInformationService }
   audit:
-    endpoint: https://otel-collector.example.com/v1/logs
-
-extraVolumes:
-  - name: client-data-public-keys
-    secret: { secretName: cmk-client-data-public-keys }
-  - name: database
-    secret: { secretName: cmk-database }        # username, password, ca.crt
-  - name: rabbitmq
-    secret: { secretName: cmk-rabbitmq-client } # tls.crt, tls.key
-  - name: rabbitmq-ca
-    secret: { secretName: rabbitmq-ca }         # ca.crt
-extraVolumeMounts:
-  - { name: client-data-public-keys, mountPath: /etc/signing-keys, readOnly: true }
-  - { name: database, mountPath: /etc/credentials/database, readOnly: true }
-  - { name: rabbitmq, mountPath: /etc/credentials/rabbitmq, readOnly: true }
-  - { name: rabbitmq-ca, mountPath: /etc/credentials/rabbitmq-ca, readOnly: true }
+    endpoint: http://otel-collector.observability.svc:4318/v1/logs
 ```
 
-The task queue (`scheduler.taskQueue`), the event reconciler targets
-(`eventProcessor`) and the plugins are required as well; see below.
+Install it:
 
-- `signingKeysPath` holds ExtAuthZ's **public** keys, named like ExtAuthZ's
-  private keys (`key1.pem`). CMK uses the file name without `.pem` as the key ID
-  and picks the key by the `kid` that ExtAuthZ writes into the client data. See
+```bash
+helm upgrade --install cmk oci://ghcr.io/openkcm/charts/cmk \
+  --version 0.2.0 --namespace services -f cmk-values.yaml --timeout 15m
+```
+
+The chart migrates the database schemas in a Job before the processes start,
+and the data in a Job after they started. Raise `--timeout` when you have many
+tenants: the migration runs for every tenant schema.
+
+- **Tenant jobs.** `tenantManager.amqp` must be the queue pair of this region's
+  entry in the Registry's `orbital.targets`; see
+  [Install the Registry](/components/cmk/install-registry).
+- **System regions.** One `eventProcessor.targets` entry per system region that
+  this CMK serves; see [Connect a regional system](/components/cmk/system-integration).
+- **Client data keys.** `/etc/signing-keys` holds ExtAuthZ's **public** keys,
+  named like ExtAuthZ's private keys (`key1.pem`). See
   [CMK: verification](/components/cmk/security/client-data#cmk-verification).
-- `authContextFields` must contain `issuer`. The entries are also passed to the
-  [identity management plugin](/components/cmk/plugins#identity-management-plugins).
-- The tenant manager is the component that turns a tenant's `ApplyAuth` into a
-  Session Manager trust record. It needs both `services` entries enabled.
-- Use `amqps://` for the broker. With `amqp://`, CMK connects without TLS even
-  when `secretRef.type` is `mtls`.
-- `extraVolumes` are mounted into all CMK pods, including the migration Jobs.
-  Keep every password, key and token in a mounted Secret (`source: file`):
-  embedded values are stored in plain text in the ConfigMaps.
-- Chart versions before 0.2.0 do not start the processes on their own: set
-  `<component>.image.command: /cmkd` and `image.args: [<subcommand>]` for every
-  component.
+- **Plugins.** The example offers HYOK keys in the customers' own AWS KMS
+  accounts. It uses the built-in `noop` plugins for identity management,
+  notifications and system information; replace them with your directory and
+  services. BYOK keys need a keystore provider plugin for the keystore pool.
+  See [CMK plugin configuration](/components/cmk/security/cmk-plugins) and
+  [feature gates and flags](/components/cmk/security/cmk-config#featuregates-and-featureflags).
+- **Secrets.** `extraVolumes` are mounted into every CMK pod, including the
+  migration Jobs. Keep every password, key and token in a mounted Secret
+  (`source: file`): embedded values are stored in plain text in the ConfigMaps.
+- **Broker.** Use `amqps://` URLs: with `amqp://`, the connection is not
+  encrypted.
 
-All other sections, such as the task queue and the event reconciler targets,
-are described in the [CMK configuration reference](/components/cmk/security/cmk-config).
-Examples for the keystore and identity management plugins are in
-[CMK plugin configuration](/components/cmk/security/cmk-plugins).
+The chart's [values.yaml][cmk-values] documents every section with the
+processes that read it, and the
+[CMK configuration reference](/components/cmk/security/cmk-config) explains how
+CMK loads its configuration.
 
-## Step 6: Configure the CMK UI
+**Check:** the pods are ready, and the release notes list no warnings except the
+reminder that `services.registry` and `services.sessionManager` rely on the
+service mesh for mutual TLS:
 
-Mount a `config.json` with the API host into the web server's document root at
-`config/config.json`:
+```bash
+kubectl -n services get pods -l app.kubernetes.io/part-of=cmk
+```
+
+If a migration fails, its Job stays, for example `cmk-schema-db-migrator`, with
+the reason in its log; successful migration Jobs are deleted.
+
+## Step 6: Install the CMK UI
+
+The CMK UI reads the API host from `config/config.json`. Create the file and a
+ConfigMap from it:
 
 ```json
 {
@@ -745,13 +766,71 @@ Mount a `config.json` with the API host into the web server's document root at
 }
 ```
 
-The UI uses this host for the CMK API and for the Session Manager endpoints.
+```bash
+kubectl -n services create configmap cmk-ui-config --from-file=config.json
+```
+
+Create `cmk-ui-values.yaml`, which mounts the file over the one in the image:
+
+```yaml
+ui:
+  replicaCount: 2
+  image:
+    registry: ghcr.io/openkcm
+    repository: cmk-ui/images/cmk-ui
+    tag: v0.0.5
+imagePullSecrets: []          # the image is public
+global:
+  volumes:
+    - name: config
+      configMap:
+        name: cmk-ui-config
+  volumeMounts:
+    - name: config
+      mountPath: /usr/share/nginx/html/config/config.json
+      subPath: config.json
+      readOnly: true
+```
+
+```bash
+helm upgrade --install cmk-ui oci://ghcr.io/openkcm/charts/cmk-ui \
+  --version 0.2.0 --namespace services -f cmk-ui-values.yaml
+```
+
+The UI uses `apiBaseUrl` for the CMK API and for the Session Manager endpoints.
+Set `ui.image` explicitly: the chart's default image is a placeholder.
+
+**Check:**
+
+```bash
+kubectl -n services rollout status deployment/cmk-ui
+```
 
 ## Step 7: Configure Envoy Gateway
+
+The Gateway publishes the API host and the UI host; the routes send requests to
+the services, and the security policy sends every CMK API request to ExtAuthZ
+first.
+
+Create the TLS Secrets of the two hosts, and the CA certificates of the clients
+that authenticate with a certificate:
+
+```bash
+kubectl -n envoy-gateway-system create secret tls api-example-com-tls --cert=api.crt --key=api.key
+kubectl -n envoy-gateway-system create secret tls ui-example-com-tls --cert=ui.crt --key=ui.key
+kubectl -n envoy-gateway-system create configmap client-ca --from-file=ca.crt=client-ca.pem
+```
 
 ### Gateway
 
 ```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy-gateway
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -760,23 +839,43 @@ metadata:
 spec:
   gatewayClassName: envoy-gateway
   listeners:
-    - name: https
+    - name: https-api
       protocol: HTTPS
       port: 443
       hostname: api.example.com
       tls:
         mode: Terminate
         certificateRefs:
-          - name: ingress-gateway-tls
+          - name: api-example-com-tls
+    - name: https-ui
+      protocol: HTTPS
+      port: 443
+      hostname: ui.example.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: ui-example-com-tls
+---
+# The routes in envoy-gateway-system send requests to Services in services.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: envoy-gateway-routes
+  namespace: services
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: envoy-gateway-system
+  to:
+    - group: ""
+      kind: Service
 ```
-
-Routes in other namespaces, such as `services`, need a `ReferenceGrant` that
-allows the gateway's routes to reference their Services.
 
 ### Session Manager routes
 
-The login endpoints must work without a session. Do **not** attach the external
-authorization policy to this route:
+The sign-in endpoints must work without a session. Do **not** attach the
+external authorization policy to this route:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -787,6 +886,7 @@ metadata:
 spec:
   parentRefs:
     - name: ingress-gateway
+      sectionName: https-api
   hostnames: [api.example.com]
   rules:
     - matches:
@@ -811,6 +911,7 @@ metadata:
 spec:
   parentRefs:
     - name: ingress-gateway
+      sectionName: https-api
   hostnames: [api.example.com]
   rules:
     - matches:
@@ -843,14 +944,45 @@ spec:
 ```
 
 Every route to a CMK service, except the Session Manager routes, needs such a
-policy. If you publish the central Registry's API through a gateway, attach an
-equivalent `SecurityPolicy` with `extAuth` to its `GRPCRoute` there.
+policy.
+
+### CMK UI route
+
+The UI route adds the security headers of the web console:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cmk-ui-http-route
+  namespace: envoy-gateway-system
+spec:
+  parentRefs:
+    - name: ingress-gateway
+      sectionName: https-ui
+  hostnames: [ui.example.com]
+  rules:
+    - matches:
+        - path: { type: PathPrefix, value: / }
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              - { name: Strict-Transport-Security, value: "max-age=31536000" }
+              - { name: Content-Security-Policy, value: "frame-ancestors 'none'" }
+              - { name: X-Frame-Options, value: DENY }
+              - { name: X-Content-Type-Options, value: nosniff }
+      backendRefs:
+        - name: cmk-ui
+          namespace: services
+          port: 8080
+```
 
 ### Client certificates and path handling
 
-A `ClientTrafficPolicy` on the gateway validates client certificates, replaces
-any `x-forwarded-client-cert` header sent by clients, and rejects ambiguous
-paths:
+A `ClientTrafficPolicy` on the API listener validates client certificates,
+replaces any `x-forwarded-client-cert` header sent by clients, and rejects
+ambiguous paths:
 
 ```yaml
 apiVersion: gateway.envoyproxy.io/v1alpha1
@@ -863,9 +995,10 @@ spec:
     - group: gateway.networking.k8s.io
       kind: Gateway
       name: ingress-gateway
+      sectionName: https-api
   tls:
     clientValidation:
-      optional: true          # browsers without certificates use the same listener
+      mode: VerifyIfGiven     # browsers without certificates use the same listener
       caCertificateRefs:
         - kind: ConfigMap
           name: client-ca
@@ -881,22 +1014,40 @@ spec:
 ExtAuthZ needs both `Subject` and `Cert` in the header. Without this policy,
 certificate-based clients cannot authenticate.
 
-## Step 8: Onboard a tenant
-
-Register the tenant in the central Registry with the region of this deployment,
-and wait until its status is `STATUS_ACTIVE`; see
-[Register a tenant](/components/cmk/tenant-integration#step-1-register-the-tenant):
+**Check:** the resources are accepted, and the API answers without a session
+with `401`, from ExtAuthZ:
 
 ```bash
-grpcurl -plaintext -d '{"id":"acme","name":"ACME Corporation","region":"emea","owner_id":"customer-4711","owner_type":"customer","role":"ROLE_LIVE"}' \
-  registry.services.svc.cluster.local:9092 kms.api.cmk.registry.tenant.v1.Service/RegisterTenant
-grpcurl -plaintext -d '{"id":"acme"}' registry.services.svc.cluster.local:9092 \
-  kms.api.cmk.registry.tenant.v1.Service/GetTenant
+kubectl -n envoy-gateway-system get gateway,httproute,securitypolicy,clienttrafficpolicy
+curl -si https://api.example.com/cmk/v1/acme/keys | head -1
+curl -s https://ui.example.com/config/config.json
+```
+
+## Step 8: Onboard a tenant
+
+Register the tenant in the Registry with the region of this deployment, and wait
+until its status is `STATUS_ACTIVE`. The Registry chart disables gRPC reflection,
+so `grpcurl` needs the API definitions from
+[api-sdk](https://github.com/openkcm/api-sdk), in the version that the Registry
+uses:
+
+```bash
+git clone --depth 1 --branch v0.23.0 https://github.com/openkcm/api-sdk
+kubectl -n services port-forward service/registry 9092:grpc &
+
+grpcurl -plaintext -import-path api-sdk/proto -import-path api-sdk/vendor-proto \
+  -proto kms/api/cmk/registry/tenant/v1/tenant.proto \
+  -d '{"id":"acme","name":"ACME Corporation","region":"emea","owner_id":"customer-4711","owner_type":"customer","role":"ROLE_LIVE"}' \
+  localhost:9092 kms.api.cmk.registry.tenant.v1.Service/RegisterTenant
+grpcurl -plaintext -import-path api-sdk/proto -import-path api-sdk/vendor-proto \
+  -proto kms/api/cmk/registry/tenant/v1/tenant.proto \
+  -d '{"id":"acme"}' localhost:9092 kms.api.cmk.registry.tenant.v1.Service/GetTenant
 ```
 
 Then register the tenant's identity provider with the Registry's `ApplyAuth`
 call. The Registry passes it to the CMK of the tenant's region, and CMK writes
-the trust record in that region's Session Manager.
+the trust record in that region's Session Manager. Save the request as
+`acme-auth.json`:
 
 ```json
 {
@@ -912,31 +1063,29 @@ the trust record in that region's Session Manager.
 }
 ```
 
-The tenant must be active in the Registry. Send the request to `kms.api.cmk.registry.auth.v1.Service/ApplyAuth`, for example with
-`grpcurl` from a pod inside the service mesh, and check the result with
-`GetAuth`:
-
 ```bash
-grpcurl -plaintext -d @ registry.services.svc.cluster.local:9092 \
-  kms.api.cmk.registry.auth.v1.Service/ApplyAuth < acme-auth.json
-grpcurl -plaintext -d '{"external_id":"acme-oidc"}' registry.services.svc.cluster.local:9092 \
-  kms.api.cmk.registry.auth.v1.Service/GetAuth
+grpcurl -plaintext -import-path api-sdk/proto -import-path api-sdk/vendor-proto \
+  -proto kms/api/cmk/registry/auth/v1/auth.proto \
+  -d @ localhost:9092 kms.api.cmk.registry.auth.v1.Service/ApplyAuth < acme-auth.json
+grpcurl -plaintext -import-path api-sdk/proto -import-path api-sdk/vendor-proto \
+  -proto kms/api/cmk/registry/auth/v1/auth.proto \
+  -d '{"external_id":"acme-oidc"}' localhost:9092 kms.api.cmk.registry.auth.v1.Service/GetAuth
 ```
 
-If the Registry has gRPC reflection disabled, pass the proto files from
-[api-sdk](https://github.com/openkcm/api-sdk) with `-import-path` and `-proto`.
 The status moves from `AUTH_STATUS_APPLYING` to `AUTH_STATUS_APPLIED`; on
 failure it shows `AUTH_STATUS_APPLYING_ERROR` and an `error_message`.
 
 | Property | Required | Effect |
 | --- | --- | --- |
 | `issuer` | yes | Must equal the identity provider's issuer exactly, including any trailing `/` |
-| `client_id` | yes, for logins | Client of Session Manager at this identity provider |
+| `client_id` | yes, for sign-in | Client of Session Manager at this identity provider |
 | `jwks_uri` | no | Signing keys for bearer tokens from this provider, used by ExtAuthZ |
 | `audiences` | no | Comma-separated. Accepted `aud` values for bearer tokens, checked by ExtAuthZ |
 
-CMK reads only `properties`; `type` is checked only if your Registry has a
-validation rule for it. Applying the call again updates the record.
+With the Registry chart's default validations, `type` must be `oidc` and
+`properties` must contain `issuer`. CMK reads only `properties`. Applying the
+call again updates the record. [Connect a regional tenant](/components/cmk/tenant-integration)
+explains every call and status.
 
 ## Step 9: Check the setup
 
@@ -960,6 +1109,10 @@ validation rule for it. Applying the call again updates the record.
    tenant's: the answer is `403`.
 1. Check that your audit endpoint receives `UserLoginSuccess` events.
 
+To monitor the region from then on, install [Checker](/components/cmk/checker):
+its `/healthz` endpoint reports the readiness of CMK and ExtAuthZ, the Kubernetes
+API server and, if you use it, the Linkerd service mesh.
+
 Then go through the [hardening checklist](/components/cmk/security/hardening).
 
 ## Local development
@@ -970,3 +1123,13 @@ provider, and the [extauthz repository](https://github.com/openkcm/extauthz)
 contains example configuration, policies and trusted subjects. Both use relaxed
 settings, such as plain HTTP and debug logging, that must not be used in
 production.
+
+## See also
+
+- [Deployment planning](/components/cmk/deployment)
+- [Install the Registry](/components/cmk/install-registry)
+- [Operations](/components/cmk/operations)
+- [Hardening checklist](/components/cmk/security/hardening)
+
+[sm-values]: https://github.com/openkcm/session-manager/blob/main/charts/session-manager/values.yaml
+[cmk-values]: https://github.com/openkcm/cmk/blob/main/charts/cmk/values.yaml

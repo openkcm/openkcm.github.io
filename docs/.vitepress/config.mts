@@ -7,6 +7,7 @@ const resourcesSidebar = [
     items: [
       {text: 'Roadmap', link: '/roadmap/'},
       {text: 'Releases', link: '/releases/'},
+      {text: 'Community and support', link: '/community/'},
       {text: 'Contributing', link: '/contribute/contributing'},
       {text: 'Documentation style guide', link: '/contribute/style-guide'},
     ]
@@ -58,10 +59,11 @@ export default withMermaid({
       },
       {
         text: 'Resources',
-        activeMatch: '^/(roadmap|releases|contribute)/',
+        activeMatch: '^/(roadmap|releases|community|contribute)/',
         items: [
           {text: 'Roadmap', link: '/roadmap/'},
           {text: 'Releases', link: '/releases/'},
+          {text: 'Community and support', link: '/community/'},
           {text: 'Contributing', link: '/contribute/contributing'},
           {text: 'Documentation style guide', link: '/contribute/style-guide'},
         ]
@@ -116,7 +118,8 @@ export default withMermaid({
           text: 'Deploy and operate',
           items: [
             {text: 'Deployment planning', link: '/components/cmk/deployment'},
-            {text: 'Configuration guide', link: '/components/cmk/security/configuration'},
+            {text: 'Install the Registry', link: '/components/cmk/install-registry'},
+            {text: 'Install a regional deployment', link: '/components/cmk/security/configuration'},
             {text: 'Request walkthrough', link: '/components/cmk/security/walkthrough'},
             {text: 'Operations', link: '/components/cmk/operations'},
             {text: 'Hardening checklist', link: '/components/cmk/security/hardening'},
@@ -141,6 +144,7 @@ export default withMermaid({
             {text: 'ExtAuthZ', link: '/components/cmk/extauthz'},
             {text: 'Session Manager', link: '/components/cmk/session-manager'},
             {text: 'Plugins', link: '/components/cmk/plugins'},
+            {text: 'Checker', link: '/components/cmk/checker'},
           ]
         },
         {
@@ -178,6 +182,7 @@ export default withMermaid({
       ],
       '/roadmap/': resourcesSidebar,
       '/releases/': resourcesSidebar,
+      '/community/': resourcesSidebar,
       '/contribute/': resourcesSidebar,
       // '/saas/': [
       //   {

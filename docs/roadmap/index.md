@@ -8,7 +8,6 @@ the plans and how to follow or influence them.
 | Source | What you find there |
 | --- | --- |
 | [Roadmap document](https://github.com/openkcm/.github/blob/main/ROADMAP.md) | Themes and milestones across all repositories, updated periodically |
-| [Roadmap board](https://github.com/orgs/openkcm/projects/2) | The current status of every planned item |
 | Issues of each repository | Individual features and bugs, for example [CMK issues](https://github.com/openkcm/cmk/issues) |
 
 ## What is available today
@@ -21,11 +20,13 @@ that is not finished say so at the top.
 
 - **Ask for a feature or report a problem** by opening an issue in the
   repository of the component concerned.
-- **Report a security vulnerability** privately, following the security policy
-  of the repository. Do not open a public issue for it.
+- **Report a security vulnerability** privately, as described in
+  [Community and support](/community/#report-a-security-vulnerability). Do not
+  open a public issue for it.
 - **Contribute** code or documentation; see [Contributing](/contribute/contributing).
 
 ## See also
 
 - [Releases](/releases/)
 - [Overview](/overview/)
+- [Community and support](/community/)

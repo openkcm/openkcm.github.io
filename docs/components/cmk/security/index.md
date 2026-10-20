@@ -88,7 +88,7 @@ certificate instead.
 ## Next steps
 
 - [Signed client data](/components/cmk/security/client-data)
-- [Security configuration guide](/components/cmk/security/configuration)
+- [Install a regional deployment](/components/cmk/security/configuration)
 - [Request walkthrough](/components/cmk/security/walkthrough)
 - [Audit logging](/components/cmk/security/audit)
 - [Hardening checklist](/components/cmk/security/hardening)

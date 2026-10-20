@@ -57,7 +57,8 @@ features:
 | **Evaluating OpenKCM** for your platform | [Overview](/overview/) | [Core concepts](/overview/core-concept), [Trust model](/overview/trust-model) |
 | **A customer** who manages keys in CMK: tenant administrator, key administrator or auditor | [Manage your keys](/components/cmk/guide/) | [Keys](/components/cmk/guide/keys), [Approvals](/components/cmk/guide/approvals) |
 | **Building a cloud service** that encrypts data with customer keys | [Connect a regional system](/components/cmk/system-integration) | [CMK API](/components/cmk/api), [Krypton](/components/krypton/) |
-| **Operating the platform** that runs CMK | [Deployment planning](/components/cmk/deployment) | [Configuration guide](/components/cmk/security/configuration), [Connect a regional tenant](/components/cmk/tenant-integration), [Operations](/components/cmk/operations) |
+| **Operating the platform** that runs CMK | [Deployment planning](/components/cmk/deployment) | [Install the Registry](/components/cmk/install-registry), [Install a regional deployment](/components/cmk/security/configuration), [Connect a regional tenant](/components/cmk/tenant-integration), [Operations](/components/cmk/operations) |
 | **Contributing** to OpenKCM | [Contributing](/contribute/contributing) | [Releases](/releases/), [Roadmap](/roadmap/) |
+| **Looking for help**, or reporting a problem or a vulnerability | [Community and support](/community/) | [Releases](/releases/) |
 
 New to the terms? The [glossary](/overview/glossary) explains them all.

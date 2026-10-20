@@ -1,67 +1,81 @@
 # Hardening checklist
 
 Review these settings before you expose an OpenKCM installation to real users or
-real keys. Chart defaults and example configurations favor ease of setup over
-security.
+real keys. The chart defaults are safe where a default can be, but several
+settings depend on your environment and must be decided by you. The
+[regional installation guide](/components/cmk/security/configuration) applies
+most of them.
 
 ## Edge
 
-- Route every API request for CMK and the Registry through ExtAuthZ. A route
-  without the external authorization policy bypasses authentication. Only the
+- Route every API request for CMK through ExtAuthZ: attach the external
+  authorization `SecurityPolicy` to every route of a CMK service. Only the
   Session Manager routes (`/sm/*`) stay without it.
-- Let Envoy validate client certificates. ExtAuthZ checks the certificate
-  subject and validity but relies on Envoy for the chain.
+- Let Envoy validate client certificates against your client CA
+  (`tls.clientValidation` in the `ClientTrafficPolicy`). ExtAuthZ checks the
+  certificate subject and validity; the chain is checked by Envoy.
 - Set `headers.xForwardedClientCert.mode: SanitizeSet` in the
-  `ClientTrafficPolicy`, so that clients cannot send their own
-  `x-forwarded-client-cert` header.
+  `ClientTrafficPolicy`, so that only Envoy sets the `x-forwarded-client-cert`
+  header.
 - Set `path.escapedSlashesAction: RejectRequest` and keep slash merging on, so
   that Cedar policies and the tenant in the path see normalized paths.
 - List explicit CORS origins, methods and headers (`content-type`,
   `x-csrf-token`) instead of `*`, because the CMK route allows credentials.
+- Serve the CMK UI only through the gateway, with the response headers
+  `Content-Security-Policy: frame-ancestors 'none'`, `X-Frame-Options: DENY`,
+  `Strict-Transport-Security` and `X-Content-Type-Options: nosniff`; see the
+  [CMK UI route](/components/cmk/security/configuration#cmk-ui-route).
 - Restrict the identity provider's administration console to administrators if
   it is published through the same gateway.
 
 ## Internal network
 
-- ExtAuthZ (gRPC 9092) and Session Manager (gRPC 9091) do not authenticate
-  their callers. Session Manager's gRPC API can change tenant trust records.
-  Allow only Envoy to reach ExtAuthZ, and only ExtAuthZ and CMK to reach Session
-  Manager's gRPC port, with network policies or service mesh authorization
-  policies.
-- The gRPC connections between OpenKCM services do not use TLS unless you
-  configure `secretRef.type: mtls`. Otherwise run all services in a service mesh
-  with mutual TLS.
-- The central Registry is called from every region, and its gRPC API can
-  create, block and terminate tenants without authenticating the caller. Use
-  mutual TLS across the regions, and allow only the regional CMKs and
-  CMK-2-Krypton Bridges, your onboarding tooling and your cloud services.
+- Run all services in a service mesh with mutual TLS. The gRPC connections
+  between the services inside the cluster use `secretRef.type: insecure` and
+  rely on the mesh for encryption and authentication. Connections that leave the
+  mesh, for example to a Registry in another cluster, go through a gateway or
+  mesh that terminates TLS and checks client certificates.
+- Allow each gRPC API only to its callers, with the charts' network policies or
+  the mesh's authorization policies:
+
+  | Service | Port | Allowed callers | Chart setting |
+  | --- | --- | --- | --- |
+  | ExtAuthZ | gRPC 9092 | Envoy Gateway | `networkPolicy.grpc.from` |
+  | Session Manager | gRPC 9091 | ExtAuthZ and every CMK process | `networkPolicy.grpc.from` |
+  | Session Manager | HTTP 8080 | Envoy Gateway | `networkPolicy.http.from` |
+  | CMK | HTTP 8081 | Envoy Gateway | `networkPolicy.http.from` |
+  | Registry | gRPC 9092 | The regional CMKs and CMK-2-Krypton Bridges, your onboarding tooling and your cloud services | `networkPolicy.grpc.from` |
+
+  Select the CMK processes with `app.kubernetes.io/part-of: cmk`: the tenant
+  manager and the event reconciler carry their own `app.kubernetes.io/name`.
+  Callers in other clusters cannot be selected by pod selectors; allow them
+  with the mesh's authorization policies.
 - Restrict the Registry's `Tenant.Region` to your CMK regions and `Tenant.ID`
   to lowercase letters, digits and hyphens with its `validations`; see
   [Connect a regional tenant](/components/cmk/tenant-integration#step-1-register-the-tenant).
-- Keep the status ports (ExtAuthZ 8080; CMK, Registry and Session Manager 8888)
-  reachable only by the kubelet and your monitoring.
-- Enable `networkPolicy` in the charts of CMK, ExtAuthZ, Session Manager and the
-  Registry, and list only the callers from the
-  [network layout](/components/cmk/deployment#network-layout).
+- Keep the status ports (ExtAuthZ 8080; CMK, Registry, Session Manager and
+  Checker 8888) reachable only by the kubelet and your monitoring, with
+  `networkPolicy.status.from`.
 
 ## Session Manager
 
 - Set `allowedRedirectBaseURLs` to the exact CMK UI origins, each ending with
-  `/`. Never add `/` or a bare host without a trailing `/`.
+  `/`.
 - Set `csrfSecret` from a Secret, to a random value of at least 32 bytes, and
   use **the same value in ExtAuthZ**
   ([Shared CSRF secret](/components/cmk/security/configuration#shared-csrf-secret)).
 - Keep `allowHttpScheme` disabled, in `sessionManager` and in the
   `service.module.grpc.session` service.
-- Use the recommended [cookie templates](/components/cmk/security/session-manager-config#cookie-templates)
-  and write `sameSite` exactly as `Lax`, `Strict` or `None`.
+- Use the recommended [cookie templates](/components/cmk/security/session-manager-config#cookie-templates).
+  Set `sessionCookieTemplate.sameSite: Lax` when the UI and API hosts share a
+  parent domain, and write `sameSite` exactly as `Lax`, `Strict` or `None`.
 - Authenticate to identity providers with mutual TLS where they support it.
 - Protect Valkey with authentication, `secretRef.type: mtls` and network
   policies. It stores sessions together with access and refresh tokens.
 - Use TLS to PostgreSQL by setting `PGSSLMODE=verify-full` and `PGSSLROOTCERT`
   for the Session Manager pods.
-- Disable gRPC reflection (`grpc.flags.reflection: false`) and profiling
-  (`status.profiling: false`).
+- Keep gRPC reflection (`grpc.flags.reflection`) and profiling
+  (`status.profiling`) off.
 - Never set the `DEBUGFEATURES` environment variable in production; it logs
   tokens.
 - Use `logger.level: info`.
@@ -70,31 +84,34 @@ security.
 
 - Use **the same CSRF secret as Session Manager**, without a trailing newline,
   and store it in a Secret. Check both copies after every change.
-- Connect to Session Manager with `secretRef.type: mtls`, or through a service
-  mesh with mutual TLS. The chart default is `insecure`.
-- Set `audiences` for every entry in `jwt.providers`. Without them, any token of
-  that issuer is accepted, also tokens issued for other applications.
-- Keep token introspection enabled so that revoked tokens are rejected.
+- Set `sessionManager.secretRef`: `insecure` inside the service mesh, or `mtls`
+  through a proxy that terminates TLS. The chart requires you to choose.
+- Set `audiences` for every entry in `jwt.providers`, so that only tokens issued
+  for CMK are accepted.
+- Make sure every identity provider publishes an `introspection_endpoint`, so
+  that revoked tokens are rejected.
 - Keep Cedar policies narrow: restrict `context.host` and `context.path`, name
   principals for technical users, and never use `context.issuer like "*"`
   outside of test environments.
 - Keep the trusted subjects file limited to the systems that need access.
-- Disable profiling (`status.profiling: false`) and gRPC reflection, and use
-  `logger.level: info`. At `debug` level, ExtAuthZ logs client data.
-- Run at least two replicas; Envoy denies requests if ExtAuthZ is unavailable.
+- Keep profiling (`status.profiling`) and gRPC reflection
+  (`grpcServer.flags.reflection`) off, and use `logger.level: info`.
+- Run at least two replicas; Envoy denies requests while ExtAuthZ is
+  unavailable.
 
 ## CMK
 
-- Use `logger.level: info`. At `debug` level, CMK logs its complete
-  configuration.
+- Use `logger.level: info`; `debug` and `trace` log the complete configuration.
 - Keep `http.swaggerEnabled` and `status.profiling` disabled.
-- Connect to PostgreSQL with `database.parameters.ssl.mode: verify-full`.
+- Connect to PostgreSQL with `database.parameters.ssl.mode: verify-full`, the
+  chart default.
 - Use `scheduler.taskQueue.secretRef.type: mtls` for the task queue.
-- Use `amqps://` URLs for `tenantManager` and `eventProcessor`.
-- Set `checksum` for external plugins, and keep credentials that plugins must
-  not see out of the pod's environment: plugins inherit it.
+- Use `amqps://` URLs for `tenantManager` and `eventProcessor`, with client
+  certificates.
+- Set `checksum` for external plugins, and keep the pod's environment free of
+  credentials that plugins do not need: plugins run with the pod's environment.
 - `extraVolumes` are mounted into every CMK pod. Mount only the Secrets the
-  components need.
+  components need, with `defaultMode: 0440`.
 - Keep every password, key and token in a mounted Secret (`source: file`).
   Values with `source: embedded` are stored in plain text in the ConfigMaps.
 - Enable `networkPolicy` and allow only Envoy Gateway on the API port
@@ -105,6 +122,19 @@ security.
   (`KMS_TenantAdministrator_<tenant>`, `KMS_TenantAuditor_<tenant>`) only to the
   intended users in the identity provider.
 
+## CMK UI
+
+- Run the UI pods as a non-root user with all capabilities dropped and the
+  `RuntimeDefault` seccomp profile; set them in the chart's security context
+  values, which have no defaults.
+- Set `apiBaseUrl` to the region's own API host.
+
+## Checker
+
+- If you publish Checker's `/healthz` outside the cluster, set
+  `config.healthcheck.maskURLs: true` and restrict the callers with
+  `networkPolicy` or your gateway.
+
 ## Signed client data
 
 - Keep the private signing keys in a Secret that only ExtAuthZ can read, and
@@ -112,8 +142,8 @@ security.
   entry of CMK's Secret is a public key, with the
   [Secret check command](/components/cmk/security/client-data#kubernetes-secrets).
 - Use RSA keys of at least 3072 bits, and a new key ID for every key pair.
-- Remove public keys from CMK when their private keys are retired; CMK accepts
-  client data signed with any key in its directory.
+- Keep only the public keys of active signing keys in CMK's directory, and
+  remove a public key when its private key is retired.
 - Rotate the signing key regularly, following the
   [rotation procedure](/components/cmk/security/client-data#key-rotation). If a
   private key may be exposed, follow
@@ -128,7 +158,9 @@ security.
   including the tenants' authentication settings. Connect with `amqps://` and
   client certificates (`secretRef.type: mtls`), give each service its own
   certificate, and allow each service to publish and consume only its own
-  queues and exchanges.
+  queues.
+- Give every CMK region its own pair of tenant job queues, so that each
+  region's tenant manager reads only the jobs of its own tenants.
 
 ## Identity providers
 
@@ -142,4 +174,4 @@ security.
 
 - Configure `audit.endpoint` in every service and forward events to a store
   that operators of OpenKCM cannot modify.
-- Monitor delivery errors in the service logs; failed events are not retried.
+- Monitor delivery errors in the service logs, and alert on them.

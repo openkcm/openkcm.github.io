@@ -2,8 +2,9 @@
 
 This page is for the platform team that runs CMK for its customers. It lists
 what you deploy, what CMK depends on, how to lay out the network, and in which
-order to install. The [configuration guide](/components/cmk/security/configuration)
-then walks you through the setup step by step.
+order to install. [Install the Registry](/components/cmk/install-registry) and
+[Install a regional deployment](/components/cmk/security/configuration) then walk
+you through the installation step by step.
 
 ## What you deploy
 
@@ -50,9 +51,11 @@ flowchart TB
 | Session Manager | Regional | Browser sign-in with the identity providers of the region's tenants |
 | CMK UI | Regional | The web console, served as static files. It is configured with one API base URL, its region's gateway |
 | CMK-2-Krypton Bridge | Regional, when you use [Krypton](/components/krypton/) | Turns CMK's key tasks into Krypton operations |
+| [Checker](/components/cmk/checker) | Optional, once per cluster | Reports the health of the services, the cluster and the service mesh, and the versions of the services, for your monitoring |
 
-Every service ships as a container image with a Helm chart; see
-[Releases](/releases/).
+Every service ships as a container image with a Helm chart, published as OCI
+artifacts in the GitHub Container Registry; [Releases](/releases/#artifacts)
+lists them. You need Kubernetes 1.23 or later and Helm 3.8 or later.
 
 ### Connections between the deployments
 
@@ -64,10 +67,9 @@ Every service ships as a container image with a Helm chart; see
 | Your cloud services | Registry gRPC API | gRPC | Register their systems and map them to tenants |
 | CMK-2-Krypton Bridge of each region | Registry gRPC API | gRPC | Register the systems it creates keys for and map them to their tenant |
 
-The Registry is the only service that every region reaches. Protect its gRPC API
-with mutual TLS or a service mesh across the regions, and allow only the
-callers above: it has no authentication of its own and can create, block and
-terminate tenants.
+The Registry is the only service that every region reaches. Its gRPC API can
+create, block and terminate tenants: protect it with mutual TLS or a service
+mesh across the regions, and allow only the callers above.
 
 ### Regions
 
@@ -88,10 +90,12 @@ configure a target for each of them.
 | --- | --- | --- |
 | PostgreSQL | Registry (central); CMK and Session Manager (each region) | Use a separate database per service and region. CMK creates one schema per tenant of its region |
 | Valkey or Redis | CMK (task queue) and Session Manager (sessions), in each region | |
-| AMQP 1.0 broker, for example RabbitMQ | Registry, CMK, your regional services | Carries tenant jobs from the Registry to the CMK of each region, and tasks from CMK to the system regions. Each Registry and CMK target has its own broker URL, so you can use one central broker or one per region |
+| AMQP 1.0 broker, for example RabbitMQ 4 | Registry, CMK, your regional services | Carries tenant jobs from the Registry to the CMK of each region, and tasks from CMK to the system regions. Each Registry and CMK target has its own broker URL, so you can use one central broker or one per region. Create one pair of queues per CMK region and per system region before you install: the services do not create them. The services authenticate with client certificates (SASL `EXTERNAL`) |
 | OpenID Connect identity providers | Session Manager, ExtAuthZ | One per tenant, usually the customer's own |
 | Keystore, for example AWS KMS | CMK, through plugins | The keystores that CMK provides for tenants, and access to the customers' own keystores for HYOK |
 | Log, metrics and audit collector (OTLP) | All services | Optional, but needed for audit events |
+| Envoy Gateway | Each region | The public entry point, with the external authorization by ExtAuthZ. The installation guide is written for Envoy Gateway 1.9 |
+| Service mesh with mutual TLS, for example Linkerd or Istio | All services | Encrypts and authenticates the gRPC traffic between the services |
 
 ## Network layout
 
@@ -113,6 +117,8 @@ are called across deployments.
 | Session Manager HTTP | 8080 | Regional | Envoy Gateway of the same region |
 | Session Manager gRPC | 9091 | Regional | ExtAuthZ and CMK of the same region |
 | Registry gRPC | 9092 | Central | The CMK and CMK-2-Krypton Bridge of every region, your tenant onboarding tooling, and your cloud services that register systems |
+| CMK UI HTTP | 8080 | Regional | Envoy Gateway of the same region |
+| Checker HTTP | 8080 | Regional | Your monitoring, or Envoy Gateway if you publish `/healthz` |
 | Status endpoints (probes, metrics) | 8888 (ExtAuthZ: 8080) | Both | The kubelet and your metrics collector |
 | AMQP broker | 5671 | Central or regional | Registry, CMK, your regional services, with mutual TLS |
 
@@ -123,8 +129,8 @@ Install the central deployment first, then each regional deployment:
 1. **Central dependencies:** the Registry's PostgreSQL database, and the AMQP
    broker if you run a central one.
 1. **Registry**, with one Orbital target per CMK region and a validation rule
-   that allows only these regions; see the
-   [Registry configuration reference](/components/cmk/security/registry-config).
+   that allows only these regions; see
+   [Install the Registry](/components/cmk/install-registry).
 1. **For each region:**
    1. **Regional dependencies:** PostgreSQL databases for CMK and Session
       Manager, Valkey or Redis, a regional broker if you use one, and the
@@ -140,16 +146,22 @@ Install the central deployment first, then each regional deployment:
       system region that this CMK serves, and set up the broker addresses for
       the services there; see
       [Connect a regional system](/components/cmk/system-integration).
+   1. **Checker** (optional), to monitor the region's services and the
+      cluster; see [Checker](/components/cmk/checker).
 1. **First tenant:** [register it in the Registry](/components/cmk/tenant-integration)
    with the region that should serve it. The CMK of that region creates its
    schema and default groups. Then apply its identity provider, which that
    region's Session Manager trusts from then on.
 
-The [configuration guide](/components/cmk/security/configuration) covers the
-regional steps in detail.
+[Install a regional deployment](/components/cmk/security/configuration) covers
+the regional steps in detail, with the Helm commands and values for each
+service.
 
 ### Adding a region
 
+1. Create the new region's queues on the broker. The Registry connects to every
+   target at startup and does not start while one cannot be reached, which
+   affects all regions.
 1. Install a regional deployment as above.
 1. Add a target for the new region to the Registry's `orbital.targets`, and the
    region to its `Tenant.Region` validation rule.
@@ -158,15 +170,16 @@ regional steps in detail.
 
 ## Replicas
 
-| Process | Replicas |
-| --- | --- |
-| CMK API server | Two or more; it can scale with an autoscaler |
-| CMK tenant manager, event reconciler, task worker | One or more |
-| CMK task scheduler | **Exactly one.** Each replica schedules the periodic tasks |
-| Session Manager | Two or more |
-| Session Manager housekeeper | Exactly one |
-| ExtAuthZ | Two or more; every API request passes it |
-| Registry (central) | One or more |
+| Process | Replicas | Chart setting |
+| --- | --- | --- |
+| CMK API server | Two or more; it can scale with an autoscaler | `apiServer.replicaCount`, `apiServer.autoscaling` |
+| CMK tenant manager, event reconciler, task worker | One or more | `<component>.replicaCount`; the tenant manager also `tenantManager.autoscaling` |
+| CMK task scheduler | **Exactly one.** Each replica schedules the periodic tasks | Fixed by the chart |
+| Session Manager | Two or more | `replicaCount`, `autoscaling` |
+| Session Manager housekeeper | Exactly one | `housekeeper.enabled` |
+| ExtAuthZ | Two or more; every API request passes it | `replicaCount`, `hpa` |
+| CMK UI | Two or more | `ui.replicaCount` |
+| Registry (central) | One or more | `replicaCount`, `hpa` |
 
 ## Decisions to make first
 
@@ -191,6 +204,7 @@ regional steps in detail.
 
 ## See also
 
-- [Configuration guide](/components/cmk/security/configuration)
+- [Install the Registry](/components/cmk/install-registry)
+- [Install a regional deployment](/components/cmk/security/configuration)
 - [Operations](/components/cmk/operations)
 - [Security architecture](/components/cmk/security/)

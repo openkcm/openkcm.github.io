@@ -36,8 +36,8 @@ OpenKCM gives a cloud service the building blocks to offer this control:
 - **Separation of duties.** Tenant administrators, key administrators and
   auditors have different, non-overlapping roles; sensitive changes can require
   approval by several people.
-- **Auditability.** Key, system and access events are sent as audit events to
-  the customer's logging infrastructure.
+- **Auditability.** Key, system and access events are recorded as audit
+  events and sent to the operator's audit collector.
 - **Open and pluggable.** Keystores and user directories connect through
   plugins. OpenKCM is open source under the Apache 2.0 license and runs on
   Kubernetes.
