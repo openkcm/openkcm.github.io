@@ -85,7 +85,7 @@ helm show chart oci://ghcr.io/openkcm/charts/cmk
   `ghcr.io/openkcm/images/keystore-plugins` and
   `ghcr.io/openkcm/images/identity-management-plugins`.
 - **Krypton** is in pre-production. The `krypton-root` chart deploys the root
-  server; see [Install the root server](/components/krypton/#install-the-root-server).
+  server; see [Install the root node](/components/krypton/install).
 - **The CMK-2-Krypton Bridge** is in early development; see its
   [current state](/components/cmk/krypton-bridge#current-state).
 

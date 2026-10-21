@@ -163,7 +163,7 @@ instance per region, and needs:
 - The AMQP broker used by CMK, with the queue of the bridge's region and a
   queue for CMK bound to the answers exchange; see
   [Configuration](#configuration).
-- Network access to the [Krypton root server](/components/krypton/#install-the-root-server)
+- Network access to the [Krypton root node](/components/krypton/install)
   and the Registry.
 
 Install it:

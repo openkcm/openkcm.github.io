@@ -163,7 +163,38 @@ export default withMermaid({
         {
           text: 'Krypton',
           items: [
-            {text: 'Overview', link: '/components/krypton/'},
+            {text: 'Start here', link: '/components/krypton/'},
+          ]
+        },
+        {
+          text: 'Learn',
+          items: [
+            {text: 'Concepts', link: '/components/krypton/concepts'},
+            {text: 'Architecture', link: '/components/krypton/architecture'},
+            {text: 'Key lifecycle', link: '/components/krypton/key-lifecycle'},
+          ]
+        },
+        {
+          text: 'Use',
+          items: [
+            {text: 'Getting started', link: '/components/krypton/getting-started'},
+            {text: 'The kr CLI', link: '/components/krypton/cli'},
+            {text: 'gRPC API', link: '/components/krypton/api'},
+            {text: 'KMIP', link: '/components/krypton/kmip'},
+          ]
+        },
+        {
+          text: 'Deploy and operate',
+          items: [
+            {text: 'Install the root node', link: '/components/krypton/install'},
+            {text: 'Agents', link: '/components/krypton/agents'},
+            {text: 'Security', link: '/components/krypton/security'},
+          ]
+        },
+        {
+          text: 'Reference',
+          items: [
+            {text: 'Configuration', link: '/components/krypton/configuration'},
           ]
         },
       ],
