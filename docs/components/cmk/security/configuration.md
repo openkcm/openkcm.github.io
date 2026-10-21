@@ -50,7 +50,7 @@ The charts are OCI artifacts in the GitHub Container Registry; see
 | `oci://ghcr.io/openkcm/charts/session-manager` | 0.11.0 | `services` |
 | `oci://ghcr.io/openkcm/charts/extauthz` | 0.15.0 | `envoy-gateway-system` |
 | `oci://ghcr.io/openkcm/charts/cmk` | 0.2.0 | `services` |
-| `oci://ghcr.io/openkcm/charts/cmk-ui` | 0.2.0 | `services` |
+| `oci://ghcr.io/openkcm/charts/cmk-ui` | 0.3.0 | `services` |
 | `oci://ghcr.io/openkcm/charts/checker` | 0.2.0 | `services` |
 
 Each chart's `values.yaml` documents every setting, with examples, and its
@@ -116,7 +116,7 @@ flowchart LR
 | Session paths | ExtAuthZ `sessionPathPrefixes` | `/cmk/v1/`, the CMK API base path; the next segment is the tenant |
 | Session Manager address | ExtAuthZ `sessionManager.address`, CMK `services.sessionManager.address` | Session Manager's gRPC Service, port 9091 |
 | Registry address | CMK `services.registry.address` | The Registry's gRPC API, port 9092 |
-| API host | CMK UI `apiBaseUrl` | One host for `/cmk/v1` and `/sm/*` |
+| API host | CMK UI `config.apiBaseUrl` | One host for `/cmk/v1` and `/sm/*` |
 | Return URLs | Session Manager `allowedRedirectBaseURLs` | The CMK UI origin, ending with `/` |
 | Callback URL | Session Manager `callbackURL` | `https://api.example.com/sm/callback`, registered at every identity provider |
 | Browser origin | CORS of the CMK `SecurityPolicy` | `https://ui.example.com` |
@@ -757,50 +757,32 @@ the reason in its log; successful migration Jobs are deleted.
 
 ## Step 6: Install the CMK UI
 
-The CMK UI reads the API host from `config/config.json`. Create the file and a
-ConfigMap from it:
-
-```json
-{
-  "apiBaseUrl": "https://api.example.com"
-}
-```
-
-```bash
-kubectl -n services create configmap cmk-ui-config --from-file=config.json
-```
-
-Create `cmk-ui-values.yaml`, which mounts the file over the one in the image:
+Create `cmk-ui-values.yaml`. The chart writes `config` into the UI's
+`config/config.json`, which the browser loads:
 
 ```yaml
-ui:
-  replicaCount: 2
-  image:
-    registry: ghcr.io/openkcm
-    repository: cmk-ui/images/cmk-ui
-    tag: v0.0.5
-imagePullSecrets: []          # the image is public
-global:
-  volumes:
-    - name: config
-      configMap:
-        name: cmk-ui-config
-  volumeMounts:
-    - name: config
-      mountPath: /usr/share/nginx/html/config/config.json
-      subPath: config.json
-      readOnly: true
+replicaCount: 2
+
+config:
+  apiBaseUrl: https://api.example.com
+
+networkPolicy:
+  enabled: true
+  http:
+    from:
+      - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system } }
 ```
 
 ```bash
 helm upgrade --install cmk-ui oci://ghcr.io/openkcm/charts/cmk-ui \
-  --version 0.2.0 --namespace services -f cmk-ui-values.yaml
+  --version 0.3.0 --namespace services -f cmk-ui-values.yaml
 ```
 
-The UI uses `apiBaseUrl` for the CMK API and for the Session Manager endpoints.
-Set `ui.image` explicitly: the chart's default image is a placeholder.
+The UI uses `config.apiBaseUrl` for the CMK API and for the Session Manager
+endpoints. The chart deploys the public CMK UI image of its `appVersion`. See
+[CMK UI](/components/cmk/cmk-ui#configuration) for the other settings.
 
-**Check:**
+**Check:** the rollout completes, and the release notes list no warnings:
 
 ```bash
 kubectl -n services rollout status deployment/cmk-ui

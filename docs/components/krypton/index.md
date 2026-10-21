@@ -67,13 +67,50 @@ Key metadata is stored in PostgreSQL.
 - The connection between CMK's customer keys and Krypton's root keys is not
   implemented yet.
 
-## Deployment and development
+## Install the root server
 
-- The root server ships as the Helm chart `krypton-root` in the repository's
-  `charts/root` directory.
+The root server ships as the Helm chart `krypton-root`
+(`oci://ghcr.io/openkcm/charts/krypton-root`). Its
+[README](https://github.com/openkcm/krypton/tree/main/charts/root) describes the
+installation, and its `values.yaml` the whole root server configuration.
+
+1. Provide PostgreSQL. The root server creates its tables at startup.
+2. Create a Secret with the PostgreSQL URL and the root key, which seals the
+   tenant root keys. Keep a backup of the root key:
+
+   ```sh
+   kubectl -n services create secret generic krypton-secret \
+     --from-literal=database-url='postgres://krypton:<password>@postgresql.services:5432/krypton?sslmode=verify-full' \
+     --from-literal=root-key="$(openssl rand -base64 32)"
+   ```
+
+3. Install the chart with the Secret:
+
+   ```sh
+   helm install krypton-root oci://ghcr.io/openkcm/charts/krypton-root \
+     --version 0.1.0 -n services \
+     --set database.existingSecret=krypton-secret \
+     --set rootKey.existingSecret=krypton-secret
+   ```
+
+The default configuration keeps the keys in the pod's memory, for a first try.
+To keep them across restarts, put them in SQLite files on a volume or in
+OpenBao; the chart's README has an example. Restrict access to the gRPC APIs
+with `config.auth` (mutual TLS) and the chart's network policy. The release
+notes warn about values with which the root server would not start.
+
+The gRPC APIs listen on port 8080 of the Service `krypton-root`, for example
+`krypton-root.services.svc.cluster.local:8080`. The chart starts the amd64
+binary of the release image; on arm64 nodes, set
+`image.command: [/root/root.linux-arm64]`.
+
+## Development
+
 - `make dev` in the repository starts PostgreSQL and a local Krypton server.
 - Building Krypton requires the Go experiment `runtimesecret`
   (`GOEXPERIMENT=runtimesecret`).
+- `make helm-test` renders the chart and checks the rendered configuration
+  with the root server's own code.
 
 ## Using Krypton with CMK
 

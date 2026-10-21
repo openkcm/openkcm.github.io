@@ -125,7 +125,7 @@ is in the `charts/cmk` directory of the
 [cmk repository](https://github.com/openkcm/cmk/tree/main/charts/cmk). Its
 `values.yaml` documents every value, including each configuration key with the
 processes that read it. The release image
-`ghcr.io/openkcm/cmk/images/cmk-full-plugins` includes the AWS KMS keystore
+`ghcr.io/openkcm/images/cmk/cmk-full-plugins` includes the AWS KMS keystore
 plugin and the SCIM identity management plugins; see [Plugins](/components/cmk/plugins).
 
 - [CMK configuration reference](/components/cmk/security/cmk-config)

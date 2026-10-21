@@ -178,7 +178,7 @@ service.
 | Session Manager | Two or more | `replicaCount`, `autoscaling` |
 | Session Manager housekeeper | Exactly one | `housekeeper.enabled` |
 | ExtAuthZ | Two or more; every API request passes it | `replicaCount`, `hpa` |
-| CMK UI | Two or more | `ui.replicaCount` |
+| CMK UI | Two or more | `replicaCount`, `hpa` |
 | Registry (central) | One or more | `replicaCount`, `hpa` |
 
 ## Decisions to make first

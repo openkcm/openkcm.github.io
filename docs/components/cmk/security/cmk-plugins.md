@@ -24,7 +24,7 @@ API server and the event reconciler log `Failed to load plugin`.
 | Static SCIM | `IdentityManagementService` | External binary from identity-management-plugins 0.6.0 or later, for tests and demos |
 | `noop` | Every type | Built into CMK. Accepts calls and does nothing |
 
-The image `cmk/images/cmk-full-plugins`, the chart's default, contains the
+The image `images/cmk/cmk-full-plugins`, the chart's default, contains the
 external binaries:
 
 | Binary | Path in the image |
@@ -41,7 +41,7 @@ compute the checksums for `checksum`. Set `<tag>` to the image tag you deploy an
 `--platform` to the architecture of your nodes:
 
 ```bash
-image=ghcr.io/openkcm/cmk/images/cmk-full-plugins:<tag>
+image=ghcr.io/openkcm/images/cmk/cmk-full-plugins:<tag>
 id=$(docker create --platform linux/amd64 "$image" /cmkd)
 docker export "$id" | tar -tvf - | grep 'etc/plugins/'
 docker cp "$id":/etc/plugins ./plugins

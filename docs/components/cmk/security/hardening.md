@@ -124,10 +124,11 @@ most of them.
 
 ## CMK UI
 
-- Run the UI pods as a non-root user with all capabilities dropped and the
-  `RuntimeDefault` seccomp profile; set them in the chart's security context
-  values, which have no defaults.
-- Set `apiBaseUrl` to the region's own API host.
+- Keep the chart's security defaults: nginx as a non-root user, a read-only
+  root filesystem, all capabilities dropped and the `RuntimeDefault` seccomp
+  profile.
+- Set `config.apiBaseUrl` to the region's own API host, with `https://`.
+- Enable `networkPolicy` and admit only the gateway in `networkPolicy.http.from`.
 
 ## Checker
 

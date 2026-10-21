@@ -134,7 +134,7 @@ The chart is in the
 documents every value, and its
 [README](https://github.com/openkcm/cmk/blob/main/charts/cmk/README.md) shows a
 complete installation. The chart deploys one Deployment per process, all from
-the same image (`ghcr.io/openkcm/cmk/images/cmk-full-plugins` by default), and
+the same image (`ghcr.io/openkcm/images/cmk/cmk-full-plugins` by default), and
 starts each with its subcommand:
 
 | Component | Deployed when | Command | `config.yaml` mounted at |
