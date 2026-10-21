@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: "OpenKCM"
-  text: "Customer-controlled key chain management for services"
-  tagline: "Open-source key management that lets the customers of a cloud service own the keys that protect their data at rest and in transit, share one key across many services, decide who may use it, and withdraw it from all of them at any time."
+  text: "Key Chain Management for cloud services"
+  tagline: "Cloud customers stay in control of their data: they bring their own key or keep it in their own keystore, decide who may manage it, and withdraw it from every service and region at once. Krypton, the key engine, creates the key hierarchies that protect the data and delivers keys to workloads."
   image:
     src: https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/official_logo.svg
     alt: OpenKCM
@@ -14,11 +14,11 @@ hero:
       text: What is OpenKCM?
       link: /overview/
     - theme: alt
-      text: Manage your keys
-      link: /components/cmk/guide/
+      text: Customer keys
+      link: /components/cmk/
     - theme: alt
-      text: Deploy CMK
-      link: /components/cmk/deployment
+      text: Crypto
+      link: /components/krypton/
     - theme: alt
       text: GitHub
       link: https://github.com/openkcm

@@ -17,7 +17,7 @@ const resourcesSidebar = [
 // https://vitepress.dev/reference/site-config
 export default withMermaid({
   title: "OpenKCM",
-  description: "OpenKCM documentation: customer-controlled key chain management for services",
+  description: "OpenKCM: open-source Key Chain Management for cloud services",
   base: '/',
   // The SaaS section is unfinished placeholder content; keep it out of the
   // published site and the search index until it is written.
