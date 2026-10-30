@@ -203,7 +203,7 @@ export default withMermaid({
         {
           text: 'Architecture',
           items: [
-            {text: 'Reference architecture', link: '/architecture/'},
+            {text: 'Introduction', link: '/architecture/'},
           ]
         },
         {
