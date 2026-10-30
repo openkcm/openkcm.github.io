@@ -49,6 +49,7 @@ export default withMermaid({
     nav: [
       {text: 'Home', link: '/'},
       {text: 'Overview', link: '/overview/', activeMatch: '^/overview/'},
+      {text: 'Architecture', link: '/architecture/', activeMatch: '^/architecture/'},
       {
         text: 'Components',
         activeMatch: '^/components/',
@@ -195,6 +196,22 @@ export default withMermaid({
           text: 'Reference',
           items: [
             {text: 'Configuration', link: '/components/krypton/configuration'},
+          ]
+        },
+      ],
+      '/architecture/': [
+        {
+          text: 'Architecture',
+          items: [
+            {text: 'Reference architecture', link: '/architecture/'},
+          ]
+        },
+        {
+          text: 'Related',
+          items: [
+            {text: 'Trust model', link: '/overview/trust-model'},
+            {text: 'CMK security architecture', link: '/components/cmk/security/'},
+            {text: 'Krypton architecture', link: '/components/krypton/architecture'},
           ]
         },
       ],
