@@ -75,7 +75,7 @@ registration.
 
 The API definitions are in [api-sdk](https://github.com/openkcm/api-sdk). The
 API is gRPC only, on port 9092. Allow only your onboarding tooling, your cloud
-services, the regional CMK deployments and the CMK-2-Krypton Bridges to reach
+services, the regional CMK deployments and the CMK-2-Krypton Bridge to reach
 it, with network policies and a service mesh with mutual TLS; see the
 [hardening checklist](/components/cmk/security/hardening#internal-network).
 

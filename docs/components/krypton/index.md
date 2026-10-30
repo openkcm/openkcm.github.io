@@ -8,7 +8,7 @@ agents can take over the lower levels close to the workloads.
 
 Repository: [openkcm/krypton](https://github.com/openkcm/krypton)
 
-::: warning Pre-production
+::: danger Sandbox
 Krypton is under active development and not intended for production use yet.
 These pages describe the `main` branch, which becomes the next release.
 Release v0.1.0 uses an older configuration format and agent protocol: run the

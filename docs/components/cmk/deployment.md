@@ -13,8 +13,8 @@ CMK region**:
 
 | Deployment | Services | How many | Holds |
 | --- | --- | --- | --- |
-| Central | [Registry](/components/cmk/registry) | One | Every tenant with its region and status, every system and the tenant it is mapped to, the tenants' identity provider settings |
-| Regional | [CMK](/components/cmk/cmk-service), [CMK UI](/components/cmk/cmk-ui), Envoy Gateway with [ExtAuthZ](/components/cmk/extauthz), [Session Manager](/components/cmk/session-manager); the [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) when you use [Krypton](/components/krypton/) | One per CMK region | The tenants of this region: their keys, key configurations, groups, approvals, system links, browser sessions and identity provider trust |
+| Central | [Registry](/components/cmk/registry); the [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) when you use [Krypton](/components/krypton/) | One | Registry: every tenant with its region and status, every system and the tenant it is mapped to, the tenants' identity provider settings. Bridge: its jobs and the keys it manages in Krypton |
+| Regional | [CMK](/components/cmk/cmk-service), [CMK UI](/components/cmk/cmk-ui), Envoy Gateway with [ExtAuthZ](/components/cmk/extauthz), [Session Manager](/components/cmk/session-manager) | One per CMK region | The tenants of this region: their keys, key configurations, groups, approvals, system links, browser sessions and identity provider trust |
 
 Every tenant belongs to exactly one CMK region, chosen when the tenant is
 [registered in the Registry](/components/cmk/tenant-integration). The Registry sends the
@@ -50,7 +50,7 @@ flowchart TB
 | Envoy Gateway and ExtAuthZ | Regional | The region's only public entry point. Checks every request |
 | Session Manager | Regional | Browser sign-in with the identity providers of the region's tenants |
 | CMK UI | Regional | The web console, served as static files. It is configured with one API base URL, its region's gateway |
-| CMK-2-Krypton Bridge | Regional, when you use [Krypton](/components/krypton/) | Turns CMK's key tasks into Krypton operations |
+| CMK-2-Krypton Bridge | Central, once, when you use [Krypton](/components/krypton/) | Serves the CMKs of all regions: receives their key and system tasks, offers them an API to manage tenants and their system keys in Krypton, and registers the systems it creates keys for |
 | [Checker](/components/cmk/checker) | Optional, once per cluster | Reports the health of the services, the cluster and the service mesh, and the versions of the services, for your monitoring |
 
 Every service ships as a container image with a Helm chart, published as OCI
@@ -65,10 +65,12 @@ lists them. You need Kubernetes 1.23 or later and Helm 3.8 or later.
 | Regional CMK | Registry gRPC API | gRPC | API server: list the tenant's systems. Tenant manager: set the tenant's user groups, read its limits, unmap systems at termination. Event reconciler: update system status and L1 key claims. Task worker: read tenant names |
 | Your tenant onboarding tooling | Registry gRPC API | gRPC | Register tenants, apply identity providers, change limits, block, unblock and terminate tenants; see [Connect a regional tenant](/components/cmk/tenant-integration) |
 | Your cloud services | Registry gRPC API | gRPC | Register their systems and map them to tenants |
-| CMK-2-Krypton Bridge of each region | Registry gRPC API | gRPC | Register the systems it creates keys for and map them to their tenant |
+| Event reconciler of each regional CMK | CMK-2-Krypton Bridge | AMQP, through Orbital | Key and system tasks of the region, when you use Krypton |
+| CMK-2-Krypton Bridge | Registry gRPC API | gRPC | Onboard tenants: register the tenants and systems it creates keys for, and map the systems to their tenant |
+| CMK-2-Krypton Bridge | Krypton root node | gRPC | Create tenants and keys in Krypton |
 
-The Registry is the only service that every region reaches. Its gRPC API can
-create, block and terminate tenants: protect it with mutual TLS or a service
+The Registry and the CMK-2-Krypton Bridge are the only services that every
+region reaches. The Registry's gRPC API can create, block and terminate tenants: protect it with mutual TLS or a service
 mesh across the regions, and allow only the callers above.
 
 ### Regions
@@ -116,7 +118,8 @@ are called across deployments.
 | CMK HTTP | 8081 | Regional | Envoy Gateway of the same region |
 | Session Manager HTTP | 8080 | Regional | Envoy Gateway of the same region |
 | Session Manager gRPC | 9091 | Regional | ExtAuthZ and CMK of the same region |
-| Registry gRPC | 9092 | Central | The CMK and CMK-2-Krypton Bridge of every region, your tenant onboarding tooling, and your cloud services that register systems |
+| Registry gRPC | 9092 | Central | The CMK of every region, the CMK-2-Krypton Bridge, your tenant onboarding tooling, and your cloud services that register systems |
+| CMK-2-Krypton Bridge gRPC | 9092 | Central | The CMKs of the regions, and the provider's tooling that manages key chains |
 | CMK UI HTTP | 8080 | Regional | Envoy Gateway of the same region |
 | Checker HTTP | 8080 | Regional | Your monitoring, or Envoy Gateway if you publish `/healthz` |
 | Status endpoints (probes, metrics) | 8888 (ExtAuthZ: 8080) | Both | The kubelet and your metrics collector |
@@ -131,6 +134,9 @@ Install the central deployment first, then each regional deployment:
 1. **Registry**, with one Orbital target per CMK region and a validation rule
    that allows only these regions; see
    [Install the Registry](/components/cmk/install-registry).
+1. **CMK-2-Krypton Bridge**, when you use Krypton: its PostgreSQL database, then
+   the Bridge with the addresses of the Registry and the Krypton root node; see
+   [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge#deployment).
 1. **For each region:**
    1. **Regional dependencies:** PostgreSQL databases for CMK and Session
       Manager, Valkey or Redis, a regional broker if you use one, and the

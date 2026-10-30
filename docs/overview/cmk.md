@@ -58,7 +58,8 @@ CMK is deployed in two parts:
 
 - A **central deployment** with the **Registry**. It knows every tenant and the
   region that serves it, and every system of the cloud services and the tenant
-  it belongs to.
+  it belongs to. With Krypton, the central deployment also runs the
+  **CMK-2-Krypton Bridge**, which serves the CMKs of all regions.
 - A **regional deployment** for each CMK region, with the CMK service, the CMK
   UI, ExtAuthZ and Session Manager. It serves the tenants registered for its
   region: their users sign in and manage their keys there, and their data stays
@@ -68,6 +69,7 @@ CMK is deployed in two parts:
 flowchart LR
     subgraph Central["Central deployment"]
         R["Registry"]
+        BR["CMK-2-Krypton Bridge"]
     end
     subgraph Regional["Regional deployment, one per CMK region"]
         GW["API gateway<br/>with ExtAuthZ"]
@@ -82,7 +84,7 @@ flowchart LR
     C -- "directory plugins" --> Dir["Tenant directory"]
     R -- "tenants of this region" --> C
     C -- "key and system changes" --> S["Systems"]
-    C -- "key tasks" --> BR["CMK-2-Krypton Bridge"]
+    C -- "key tasks" --> BR
     BR -- "key operations" --> KR["Krypton"]
 ```
 
@@ -93,7 +95,7 @@ flowchart LR
 | CMK UI | Regional | Web console |
 | Session Manager | Regional | Sign-in with the tenant's identity provider |
 | ExtAuthZ | Regional | Checks every API request at the gateway |
-| CMK-2-Krypton Bridge | Regional | Turns CMK's key decisions into Krypton operations (early stage) |
+| CMK-2-Krypton Bridge | Central | Turns CMK's key decisions into Krypton operations (early stage) |
 
 Keystores and user directories connect through plugins. Today CMK includes a
 plugin for AWS KMS and plugins for SCIM directories; further keystores can be

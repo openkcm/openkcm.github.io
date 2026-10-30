@@ -26,7 +26,7 @@ and what happens when a customer withdraws a key.
 | CMK | Key references, metadata, policies, roles, workflow state | Instruct keystores through plugins; inform systems of changes. Never holds key material |
 | Keystore | Key material | Perform key operations |
 | CMK-2-Krypton Bridge | The mapping of CMK's keys to Krypton keys | Create and update keys in Krypton on behalf of CMK |
-| Krypton (pre-production) | Sealed key material of key hierarchies | Generate keys and deliver them to authorized workloads |
+| Krypton <Badge type="danger" text="Sandbox" /> | Sealed key material of key hierarchies | Generate keys and deliver them to authorized workloads |
 | Systems of the cloud service | The keys they are allowed to use | Encrypt and decrypt the tenant's data |
 
 ## Key ownership and revocation
@@ -73,10 +73,10 @@ flowchart TB
 | Part | Status |
 | --- | --- |
 | L1 customer keys managed through CMK, with propagation to systems | Available |
-| Key hierarchies with sealing in Krypton | Pre-production |
+| Key hierarchies with sealing in Krypton | <Badge type="danger" text="Sandbox" /> |
 | CMK creating the L2 to L4 keys in Krypton through the CMK-2-Krypton Bridge | Early stage |
 | L1 protecting the Krypton hierarchy | Not yet available |
-| Key delivery to workloads over KMIP | Pre-production |
+| Key delivery to workloads over KMIP | <Badge type="danger" text="Sandbox" /> |
 
 ## Access to the platform
 

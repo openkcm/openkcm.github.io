@@ -1,10 +1,11 @@
 # CMK-2-Krypton Bridge
 
-The CMK-2-Krypton Bridge is the CMK service that connects CMK to
+The CMK-2-Krypton Bridge is the central CMK service that connects CMK to
 [Krypton](/components/krypton/). CMK relies on Krypton for its cryptographic key
-operations: the bridge turns CMK operations, such as creating, enabling,
-disabling and deleting keys, into Krypton requests, so that a customer's
-decisions in CMK are enforced in Krypton as well.
+operations: the bridge serves the CMKs of all regions, offers them an API to
+manage tenants and their system keys in Krypton, and turns CMK operations, such
+as creating, enabling, disabling and deleting keys, into Krypton requests, so
+that a customer's decisions in CMK are enforced in Krypton as well.
 
 Repository: [openkcm/cmk-krypton-bridge](https://github.com/openkcm/cmk-krypton-bridge)
 
@@ -16,14 +17,15 @@ The bridge is under active development. See [Current state](#current-state).
 
 ```mermaid
 flowchart LR
-    C["CMK<br/>event reconciler"] -- "key and system tasks<br/>(Orbital over AMQP)" --> B["CMK-2-Krypton Bridge"]
+    C["CMK of each region<br/>event reconciler"] -- "key and system tasks<br/>(Orbital over AMQP)" --> B["CMK-2-Krypton Bridge<br/>(central)"]
     B -- "gRPC" --> K["Krypton<br/>root server"]
     B -- "register systems (gRPC)" --> R["Registry"]
     B --- DB[("PostgreSQL<br/>jobs and managed keys")]
 ```
 
-1. CMK sends key and system changes for a region as tasks. In a deployment with
-   Krypton, the bridge is the receiver of these tasks for its region.
+1. The CMK of each region sends its key and system changes as tasks. In a
+   deployment with Krypton, the central bridge receives the tasks of the CMKs of
+   all regions.
 1. The bridge maps CMK's key levels onto a Krypton key hierarchy and makes sure
    every key in the chain exists in Krypton.
 1. It reports the result back to CMK and registers the systems it serves in the
@@ -74,7 +76,8 @@ It takes effect only for keys that are in the configuration or have a built-in
 default. Use it for secrets: keep the key in `config` with an empty value, and
 set the variable from a Secret with `extraEnvs`.
 
-Chart values for the region `eu10`, for example `cmk-krypton-bridge.yaml`:
+Chart values, for example `cmk-krypton-bridge.yaml`, here with the tasks of the
+region `eu10`:
 
 ```yaml
 fullnameOverride: cmk-krypton-bridge
@@ -150,18 +153,20 @@ for the event reconciler settings.
 | Key and system tasks from CMK | Received and acknowledged; no effect in Krypton yet |
 | L1 customer key protecting the L2 tenant key | Not implemented yet; a fixed placeholder is used |
 | Connection to Krypton | Plaintext inside a service mesh with mutual TLS, TLS, or mutual TLS (`config.kryptonClient.secretRef`) |
+| Tasks of several CMK regions | Each bridge instance reads one task queue and answers to one exchange (`config.orbital.amqp`), and registers its systems with one `config.registry.region` |
+| Use of the bridge's API by CMK | Not yet; the API is called with the provider's tooling, for example `cmk2kryptonctl` |
 
 ## Deployment
 
 The bridge ships as the container image
 `ghcr.io/openkcm/images/cmk-krypton-bridge` and the Helm chart
-`oci://ghcr.io/openkcm/charts/cmkkryptonbridge`. It runs next to CMK, one
-instance per region, and needs:
+`oci://ghcr.io/openkcm/charts/cmkkryptonbridge`. It is a central component: it
+runs next to the Registry and serves the CMKs of all regions. It needs:
 
 - PostgreSQL. The bridge creates its tables at startup, so its database user
   needs to own the database or have `CREATE` on its schema.
-- The AMQP broker used by CMK, with the queue of the bridge's region and a
-  queue for CMK bound to the answers exchange; see
+- The AMQP broker used by the CMKs, with the bridge's task queue and a queue
+  for CMK bound to the answers exchange; see
   [Configuration](#configuration).
 - Network access to the [Krypton root node](/components/krypton/install)
   and the Registry.

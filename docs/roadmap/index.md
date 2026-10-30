@@ -13,7 +13,7 @@ the plans and how to follow or influence them.
 ## What is available today
 
 The [Overview](/overview/#what-is-available-today) lists which capabilities are
-available, in pre-production or not yet available. Pages that describe a part
+available, in <Badge type="danger" text="Sandbox" /> or not yet available. Pages that describe a part
 that is not finished say so at the top.
 
 ## Influence the roadmap

@@ -44,7 +44,7 @@ most of them.
   | Session Manager | gRPC 9091 | ExtAuthZ and every CMK process | `networkPolicy.grpc.from` |
   | Session Manager | HTTP 8080 | Envoy Gateway | `networkPolicy.http.from` |
   | CMK | HTTP 8081 | Envoy Gateway | `networkPolicy.http.from` |
-  | Registry | gRPC 9092 | The regional CMKs and CMK-2-Krypton Bridges, your onboarding tooling and your cloud services | `networkPolicy.grpc.from` |
+  | Registry | gRPC 9092 | The regional CMKs, the CMK-2-Krypton Bridge, your onboarding tooling and your cloud services | `networkPolicy.grpc.from` |
 
   Select the CMK processes with `app.kubernetes.io/part-of: cmk`: the tenant
   manager and the event reconciler carry their own `app.kubernetes.io/name`.

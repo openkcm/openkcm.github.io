@@ -37,7 +37,7 @@ features:
     link: /components/cmk/system-integration
     linkText: Connect a system
   - title: 🧱 Krypton
-    details: Creates and operates cryptographic key hierarchies and delivers keys to workloads over KMIP. Used by CMK, and usable on its own. In pre-production.
+    details: Creates and operates cryptographic key hierarchies and delivers keys to workloads over KMIP. Used by CMK, and usable on its own. <span class="VPBadge danger">Sandbox</span>
     link: /overview/krypton
     linkText: About Krypton
   - title: 🔌 Pluggable

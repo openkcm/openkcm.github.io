@@ -39,7 +39,7 @@ deployment. See [Deployment planning](/components/cmk/deployment#what-you-deploy
 | [CMK UI](/components/cmk/cmk-ui) | Regional | Web console for CMK | [cmk-ui][cmk-ui] |
 | [ExtAuthZ](/components/cmk/extauthz) | Regional | Authenticates every API request, evaluates Cedar policies, signs client data | [extauthz][extauthz] |
 | [Session Manager](/components/cmk/session-manager) | Regional | OIDC login, browser sessions and per-tenant identity provider trust | [session-manager][sm] |
-| [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) | Regional | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [cmk-krypton-bridge][bridge] |
+| [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge) | Central | Turns CMK's key decisions into Krypton operations; CMK requires Krypton for its cryptographic keys | [cmk-krypton-bridge][bridge] |
 | [Checker](/components/cmk/checker) | Optional, per cluster | Reports the health of the services, the cluster and the service mesh, and the versions of the services | [checker][checker] |
 
 ## How the services work together

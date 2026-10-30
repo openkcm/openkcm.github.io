@@ -4,7 +4,7 @@ Krypton holds the key material that protects your tenants' data. This page lists
 what a Krypton deployment needs to be secure: who may connect, how secrets are
 provided, where key material is stored, and what the hosts must allow.
 
-::: warning Pre-production
+::: danger Sandbox
 Krypton is not intended for production use yet. Apply these requirements in
 every shared environment, and review them again with each release.
 :::

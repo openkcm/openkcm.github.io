@@ -6,7 +6,7 @@ releases and documentation.
 | Component | Purpose | Status |
 | --- | --- | --- |
 | [CMK](/components/cmk/) | Customer-Managed Keys: governance of customer keys and their keystores, tenants, roles, approval workflows and propagation to regions | Available |
-| [Krypton](/components/krypton/) | Cryptographic keys: key hierarchies, key material and key delivery to workloads | Pre-production |
+| [Krypton](/components/krypton/) | Cryptographic keys: key hierarchies, key material and key delivery to workloads | <Badge type="danger" text="Sandbox" /> |
 
 ```mermaid
 flowchart LR

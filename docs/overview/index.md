@@ -49,7 +49,7 @@ OpenKCM consists of two components:
 | Component | What it does | Status |
 | --- | --- | --- |
 | [CMK](/overview/cmk) (Customer-Managed Keys) | Governs customer keys: tenants, keys and their keystores, the systems that use them, roles, approval workflows and audit | Available |
-| [Krypton](/overview/krypton) | Creates and operates the cryptographic keys: key hierarchies, key material and key delivery to workloads | Pre-production |
+| [Krypton](/overview/krypton) | Creates and operates the cryptographic keys: key hierarchies, key material and key delivery to workloads | <Badge type="danger" text="Sandbox" /> |
 
 How they relate:
 
@@ -98,10 +98,13 @@ flowchart TB
 | Sign-in with each tenant's own OpenID Connect identity provider | Available |
 | Roles, approval workflows and audit events | Available |
 | Propagation of key changes to the systems of each region | Available |
-| Key hierarchies, key storage and key delivery over KMIP (Krypton) | Pre-production |
+| Key hierarchies, key storage and key delivery over KMIP (Krypton) | <Badge type="danger" text="Sandbox" /> |
 | CMK using Krypton through the CMK-2-Krypton Bridge | Early stage |
 | Customer key protecting the Krypton key hierarchy | Not yet available |
 | Gateway components running next to the workloads | Not yet available |
+
+<Badge type="danger" text="Sandbox" /> means: ready to try out and evaluate, under
+active development, and not intended for production use yet.
 
 ## Who uses OpenKCM
 
