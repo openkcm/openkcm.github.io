@@ -117,7 +117,7 @@ config:
 | `rabbitmq.existingSecret` | Secret with the bridge's client certificate for the AMQP broker, mounted at `/etc/credentials/rabbitmq`. Required with `config.orbital.amqp.auth.type: mtls`, the default |
 | `config.kryptonClient` | Address of the Krypton root server and the transport: `insecure` (plaintext, inside a service mesh with mutual TLS), `tls` or `mtls` (client certificate, for a root server with mutual TLS) |
 | `config.orbital.amqp` | The broker, the queue of the region's tasks (`source`) and the exchange for the answers (`target`). Authentication: `mtls` (default), `basic` or `anonymous` |
-| `config.registry` | The Registry's gRPC address and the `region` of the registered systems. `ownerId` and `systemType` are required by the Registry, and `systemType` must pass its [`System.Type` rule](/components/cmk/security/registry-config#validations). The connection is plaintext by default, for a service mesh with mutual TLS; `insecure: false` with `caCert`, `clientCert` and `clientKey` uses TLS |
+| `config.registry` | The Registry's gRPC address, and the `region`, `ownerId`, `ownerType` and `role` (default `ROLE_TRIAL`) of the tenants and systems that the bridge registers. The `region` is the tenants' CMK region and the systems' region at the same time, see [Connect a regional tenant](/components/cmk/tenant-integration#with-krypton-through-the-cmk-2-krypton-bridge). `ownerId` and `systemType` are required by the Registry, and `systemType` must pass its [`System.Type` rule](/components/cmk/security/registry-config#validations). The connection is plaintext by default, for a service mesh with mutual TLS; `insecure: false` with `caCert`, `clientCert` and `clientKey` uses TLS |
 | `config.worker` | Number of concurrent jobs per pod (`concurrency`), polling interval and the timeout after which a job in progress is retried |
 
 On the CMK side, the event reconciler sends the region's tasks to the bridge
@@ -151,7 +151,7 @@ for the event reconciler settings.
 | --- | --- |
 | Key hierarchy in Krypton (`EnsureKeyHierarchy`) | Implemented |
 | Key and system tasks from CMK | Received and acknowledged; no effect in Krypton yet |
-| L1 customer key protecting the L2 tenant key | Not implemented yet; a fixed placeholder is used |
+| L1 customer key protecting the L2 Domain (System) key | Not implemented yet; a fixed placeholder is used |
 | Connection to Krypton | Plaintext inside a service mesh with mutual TLS, TLS, or mutual TLS (`config.kryptonClient.secretRef`) |
 | Tasks of several CMK regions | Each bridge instance reads one task queue and answers to one exchange (`config.orbital.amqp`), and registers its systems with one `config.registry.region` |
 | Use of the bridge's API by CMK | Not yet; the API is called with the provider's tooling, for example `cmk2kryptonctl` |

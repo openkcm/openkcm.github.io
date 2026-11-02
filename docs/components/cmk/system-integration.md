@@ -33,6 +33,12 @@ Your service is responsible for carrying out each task: start or stop using a
 key, switch to another key or key version. CMK tracks the result and shows it to
 the customer.
 
+::: tip With Krypton
+In a deployment with [Krypton](/components/krypton/) <Badge type="danger" text="Sandbox" />,
+the keys that encrypt the tenant's data come from Krypton: your workloads fetch
+them over KMIP. See [Use keys in a workload](/components/krypton/workloads).
+:::
+
 ## Step 1: Register your systems
 
 Register each system with the Registry's `RegisterSystem` gRPC call, defined in
@@ -213,6 +219,8 @@ system's region.
 
 - [Connect a regional tenant](/components/cmk/tenant-integration): how tenants
   are registered for their CMK region
+- [Use keys in a workload](/components/krypton/workloads): fetch the tenant's
+  keys from Krypton over KMIP
 - [Systems](/components/cmk/guide/systems): what the customer sees
 - [Registry](/components/cmk/registry)
 - [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge): the CMK service that

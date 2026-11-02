@@ -182,6 +182,7 @@ export default withMermaid({
             {text: 'The kr CLI', link: '/components/krypton/cli'},
             {text: 'gRPC API', link: '/components/krypton/api'},
             {text: 'KMIP', link: '/components/krypton/kmip'},
+            {text: 'Workloads', link: '/components/krypton/workloads'},
           ]
         },
         {
@@ -204,6 +205,10 @@ export default withMermaid({
           text: 'Architecture',
           items: [
             {text: 'Introduction', link: '/architecture/'},
+            {text: 'Deployment', link: '/architecture/deployment'},
+            {text: 'Main flows', link: '/architecture/flows'},
+            {text: 'Security and integration', link: '/architecture/security-and-integration'},
+            {text: 'OpenKCM compared', link: '/architecture/compared'},
           ]
         },
         {

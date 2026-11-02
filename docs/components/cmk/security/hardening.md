@@ -52,7 +52,7 @@ most of them.
   with the mesh's authorization policies.
 - Restrict the Registry's `Tenant.Region` to your CMK regions and `Tenant.ID`
   to lowercase letters, digits and hyphens with its `validations`; see
-  [Connect a regional tenant](/components/cmk/tenant-integration#step-1-register-the-tenant).
+  [Connect a regional tenant](/components/cmk/tenant-integration#without-krypton-directly-in-the-registry).
 - Keep the status ports (ExtAuthZ 8080; CMK, Registry, Session Manager and
   Checker 8888) reachable only by the kubelet and your monitoring, with
   `networkPolicy.status.from`.

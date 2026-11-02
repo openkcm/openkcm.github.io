@@ -6,7 +6,7 @@ and what happens when a customer withdraws a key.
 
 ## Principles
 
-1. **The customer controls the key.** Every tenant key is managed through CMK
+1. **The customer controls the key.** Every Domain (System) key is managed through CMK
    under the tenant's own roles; HYOK keys stay in the customer's own keystore.
 2. **Governance is separated from key material.** CMK decides and records; the
    keystore holds the key material and performs key operations.
@@ -59,7 +59,7 @@ flowchart TB
         L1["L1 – Customer key"]
     end
     subgraph Krypton["Krypton"]
-        L2["L2 – Tenant key"]
+        L2["L2 – Domain (System) key"]
         L3["L3 – Service key"]
     end
     subgraph Workload["Workload"]

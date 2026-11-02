@@ -5,6 +5,9 @@ Interoperability Protocol. The root node runs an optional KMIP server that
 returns the key material of active keys to clients that prove, with their
 certificate, that they belong to the key's tenant.
 
+This page describes the server. For the workload's side, which key to ask for
+and how to fetch and use it, see [Use keys in a workload](/components/krypton/workloads).
+
 ::: info Keys need key material
 KMIP returns key material, which Krypton creates when a key is activated. The
 processing of activations is not implemented yet (see
@@ -69,6 +72,7 @@ Krypton overwrites it when the connection closes.
 
 ## See also
 
+- [Use keys in a workload](/components/krypton/workloads)
 - [Security](/components/krypton/security)
 - [Configuration reference](/components/krypton/configuration#kmip)
 - [OASIS KMIP specifications](https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=kmip)

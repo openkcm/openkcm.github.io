@@ -124,8 +124,8 @@ Continue with the concepts:
 - [CMK](/overview/cmk) and [Krypton](/overview/krypton): what each component does.
 - [Trust model](/overview/trust-model): who holds which keys and who can revoke
   access.
-- [Architecture](/architecture/): how a provider deploys OpenKCM, and how it
-  differs from other key management offerings.
+- [Architecture](/architecture/): how a provider deploys OpenKCM, its main
+  flows, and how it [differs from other key management offerings](/architecture/compared).
 - [Glossary](/overview/glossary): every term in one place.
 
 Or go straight to your task:

@@ -51,7 +51,7 @@ database, and the key material in a vault: OpenBao, or SQLite for development.
 | Know the states of a key and what changes them | [Key lifecycle](/components/krypton/key-lifecycle) |
 | Run Krypton on your machine and try it with the CLI | [Getting started](/components/krypton/getting-started) |
 | Manage tenants and keys | [The kr CLI](/components/krypton/cli) and the [gRPC API](/components/krypton/api) |
-| Give workloads their keys | [KMIP](/components/krypton/kmip) |
+| Workloads | [Use keys in a workload](/components/krypton/workloads), and [KMIP](/components/krypton/kmip) for the server |
 | Install the root node in Kubernetes | [Install the root node](/components/krypton/install) |
 | Run agents | [Agents](/components/krypton/agents) |
 | Secure a deployment | [Security](/components/krypton/security) |

@@ -58,7 +58,7 @@ keys, where each key protects (encrypts) the keys of the level below:
 ```mermaid
 flowchart TB
     L1["L1 – Customer key<br/>in the keystore, managed through CMK"]
-    L2["L2 – Tenant key"]
+    L2["L2 – Domain (System) key"]
     L3["L3 – Service key"]
     L4["L4 – Data encryption key<br/>used by the workload"]
     L1 -- "protects" --> L2

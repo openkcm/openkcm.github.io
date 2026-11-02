@@ -45,7 +45,7 @@ entry links to the page that explains the term in detail.
 
 | Term | Meaning |
 | --- | --- |
-| L1 to L4 | The levels of the key hierarchy: customer key, tenant key, service key and data encryption key |
+| L1 to L4 | The levels of the key hierarchy: customer key, Domain (System) key, service key and data encryption key |
 | OpenBao | The secrets store in which Krypton keeps sealed key material |
 | Orbital | The library that CMK and the Registry use to send jobs and tasks between services over an AMQP broker, and to track their results |
 | Plugin | A separate process that connects CMK to a keystore or to a user directory. See [Plugins](/components/cmk/plugins) |
