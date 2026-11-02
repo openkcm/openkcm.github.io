@@ -10,7 +10,6 @@ go into detail:
 | [Deployment](/architecture/deployment) | Where each component runs, the regions, and where the data of a tenant lives |
 | [Main flows](/architecture/flows) | Onboarding a customer, creating a key chain, connecting a service, withdrawing a key, delivering keys to workloads |
 | [Security and integration](/architecture/security-and-integration) | Security principles, the connections between the components, what the provider integrates, and the technology stack |
-| [OpenKCM compared](/architecture/compared) | How OpenKCM differs from cloud KMSs, secrets managers and enterprise key managers, and when to use which |
 
 ## The problem it solves
 
@@ -105,7 +104,7 @@ the systems, which act on them.
 
 OpenKCM manages this chain for all customers of a provider, which sets it apart
 from a key management service that holds the keys of one account. See
-[OpenKCM compared](/architecture/compared).
+[OpenKCM vs. KMS offerings](/overview/openkcm-vs-kms).
 
 ## Status
 

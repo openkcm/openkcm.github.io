@@ -1,4 +1,4 @@
-# OpenKCM compared
+# OpenKCM vs. KMS offerings
 
 OpenKCM is not another key management service (KMS). A KMS holds keys and
 performs key operations for its owner. OpenKCM manages the relationship between

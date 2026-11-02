@@ -208,13 +208,13 @@ export default withMermaid({
             {text: 'Deployment', link: '/architecture/deployment'},
             {text: 'Main flows', link: '/architecture/flows'},
             {text: 'Security and integration', link: '/architecture/security-and-integration'},
-            {text: 'OpenKCM compared', link: '/architecture/compared'},
           ]
         },
         {
           text: 'Related',
           items: [
             {text: 'Trust model', link: '/overview/trust-model'},
+            {text: 'OpenKCM vs. KMS offerings', link: '/overview/openkcm-vs-kms'},
             {text: 'CMK security architecture', link: '/components/cmk/security/'},
             {text: 'Krypton architecture', link: '/components/krypton/architecture'},
           ]
@@ -225,6 +225,7 @@ export default withMermaid({
           text: 'Overview',
           items: [
             {text: 'Introduction', link: '/overview/'},
+            {text: 'OpenKCM vs. KMS offerings', link: '/overview/openkcm-vs-kms'},
             {text: 'Core concepts', link: '/overview/core-concept'},
             {text: 'CMK', link: '/overview/cmk'},
             {text: 'Krypton', link: '/overview/krypton'},

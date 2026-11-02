@@ -54,7 +54,7 @@ features:
 
 | You are… | Start here | Then |
 | --- | --- | --- |
-| **Evaluating OpenKCM** for your platform | [Overview](/overview/) | [Core concepts](/overview/core-concept), [Trust model](/overview/trust-model) |
+| **Evaluating OpenKCM** for your platform | [Overview](/overview/) | [Core concepts](/overview/core-concept), [Trust model](/overview/trust-model), [OpenKCM vs. KMS offerings](/overview/openkcm-vs-kms) |
 | **A customer** who manages keys in CMK: tenant administrator, key administrator or auditor | [Manage your keys](/components/cmk/guide/) | [Keys](/components/cmk/guide/keys), [Approvals](/components/cmk/guide/approvals) |
 | **Building a cloud service** that encrypts data with customer keys | [Connect a regional system](/components/cmk/system-integration) | [CMK API](/components/cmk/api), [Use keys in a workload](/components/krypton/workloads) |
 | **Operating the platform** that runs CMK | [Deployment planning](/components/cmk/deployment) | [Install the Registry](/components/cmk/install-registry), [Install a regional deployment](/components/cmk/security/configuration), [Connect a regional tenant](/components/cmk/tenant-integration), [Operations](/components/cmk/operations) |

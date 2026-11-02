@@ -42,6 +42,9 @@ OpenKCM gives a cloud service the building blocks to offer this control:
   plugins. OpenKCM is open source under the Apache 2.0 license and runs on
   Kubernetes.
 
+See [OpenKCM vs. KMS offerings](/overview/openkcm-vs-kms) for how this differs from cloud
+KMSs, secrets managers and enterprise key managers.
+
 ## Two components
 
 OpenKCM consists of two components:
@@ -124,8 +127,10 @@ Continue with the concepts:
 - [CMK](/overview/cmk) and [Krypton](/overview/krypton): what each component does.
 - [Trust model](/overview/trust-model): who holds which keys and who can revoke
   access.
-- [Architecture](/architecture/): how a provider deploys OpenKCM, its main
-  flows, and how it [differs from other key management offerings](/architecture/compared).
+- [OpenKCM vs. KMS offerings](/overview/openkcm-vs-kms): how OpenKCM differs from cloud KMSs,
+  secrets managers and enterprise key managers, and when to use which.
+- [Architecture](/architecture/): how a provider deploys OpenKCM, and its main
+  flows.
 - [Glossary](/overview/glossary): every term in one place.
 
 Or go straight to your task:
