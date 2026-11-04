@@ -9,7 +9,7 @@ Krypton is **independent**: it does not depend on CMK and can be deployed and
 used on its own. CMK, in turn, uses Krypton for its cryptographic key
 operations.
 
-::: warning Pre-production
+::: danger Sandbox
 Krypton is under active development and not intended for production use yet.
 :::
 

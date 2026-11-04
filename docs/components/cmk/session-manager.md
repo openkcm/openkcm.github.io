@@ -11,7 +11,7 @@ Repository: [openkcm/session-manager](https://github.com/openkcm/session-manager
 
 | Process | Purpose |
 | --- | --- |
-| `apiserver` | HTTP login endpoints and the gRPC API |
+| `api-server` | HTTP login endpoints (port 8080) and the gRPC API (port 9091) |
 | `housekeeper` | Removes idle sessions and refreshes tokens that are about to expire |
 | `migrate` | Applies database migrations |
 
@@ -48,7 +48,7 @@ All responses carry security headers and a strict Content Security Policy.
 1. It creates the session, sets the session and CSRF cookies, records a
    `UserLoginSuccess` audit event, and redirects to the return URL.
 
-Failed logins are recorded in the application log.
+Failed logins are recorded as `UserLoginFailure` audit events.
 
 ## Sessions
 
@@ -85,7 +85,7 @@ runs its own Session Manager, which holds the trust records of the tenants
 registered for that region. The region's CMK maintains these records when the
 central Registry sends it a tenant's identity provider, block, unblock or
 termination (see [Connect a regional tenant](/components/cmk/tenant-integration)),
-through the `oidcmapping` gRPC service:
+through the `trustmapping` gRPC service (older CMK releases use `oidcmapping`):
 
 - **Apply** creates or updates the trust for a tenant.
 - **Block** and **Unblock** stop or resume session-based access for a tenant:

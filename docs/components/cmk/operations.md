@@ -70,6 +70,13 @@ upgrades (`--timeout`) and, if you set it, in `dbMigrator.activeDeadlineSeconds`
 If you disable the jobs (`dbMigrator.enabled: false`), run `cmkd db-migrator`
 yourself: schema migrations before, data migrations after every upgrade.
 
+Helm deletes a migration Job when it succeeds. A failed Job stays, with the
+reason in its log:
+
+```bash
+kubectl -n services logs job/cmk-schema-db-migrator
+```
+
 ## Upgrades
 
 1. Read the release notes of each service you upgrade; see [Releases](/releases/).
@@ -79,8 +86,17 @@ yourself: schema migrations before, data migrations after every upgrade.
 1. Watch the migration jobs. If the schema migration fails, the upgrade stops
    before the new version starts; fix the cause and run the upgrade again.
 1. Read the *Upgrading* section of the chart README when you change the chart
-   version. From CMK chart 0.1.x to 0.2.0, a release named `cmk` needs a
-   one-time deletion of the old immutable ConfigMaps before the upgrade.
+   version, and apply each of its rows. From CMK chart 0.1.x to 0.2.0, for
+   example:
+    - The API server's replicas and autoscaler moved to `apiServer.replicaCount`
+      and `apiServer.autoscaling`; the top-level keys are ignored.
+    - The task scheduler and task worker are deployed by default; they need
+      `scheduler.taskQueue` and the plugins.
+    - The default image is `cmk-full-plugins`, with the tag of the chart's
+      `appVersion`.
+    - `featureFlagsConfigMap` is required when feature flags are enabled.
+    - A release named `cmk` needs a one-time deletion of the old immutable
+      ConfigMaps before the upgrade.
 
 A Helm rollback does not roll back database migrations. To go back to an older
 version, roll back the migrations with `cmkd db-migrator --rollback` first.
@@ -107,6 +123,12 @@ Logs are JSON by default; set the level with `logger.level`. Traces and metrics
 are exported over OTLP when `telemetry` is configured. Audit events go to the
 OTLP endpoint in `audit.endpoint`; see [Audit logging](/components/cmk/security/audit).
 
+For one health signal of a whole region, install [Checker](/components/cmk/checker):
+its `/healthz` endpoint answers `200` only when the readiness endpoints of the
+CMK services, the Kubernetes API server and, if you use it, the Linkerd service
+mesh are healthy, and its `/versions` endpoint shows the deployed version of
+every service.
+
 ## Backups
 
 | Store | Contents | Back up |
@@ -127,6 +149,7 @@ CMK database and task queue. The Helm chart starts an idle pod for it with
 
 ```bash
 kubectl -n services exec deploy/cmk-cmkctl -- /cmkctl tenant list
+kubectl -n services exec deploy/cmk-cmkctl -- /cmkctl tenant get --id acme
 ```
 
 The pod has the same credentials as the CMK processes. Set `cmkctl.deploy`
@@ -134,7 +157,7 @@ back to `false` when you are done.
 
 | Command | Purpose |
 | --- | --- |
-| `cmkctl tenant list`, `cmkctl tenant get` | Show tenants |
+| `cmkctl tenant list`, `cmkctl tenant get --id <tenant>` | Show tenants |
 | `cmkctl task invoke --task <task> [--tenants a,b]` | Run a scheduled task now, optionally for some tenants only |
 | `cmkctl task queues`, `cmkctl task stats --queue <queue>` | Inspect the task queues |
 
@@ -155,12 +178,26 @@ Registry, Session Manager and the systems are not informed. See
 | A process never becomes ready | The database is unreachable |
 | Systems fail with `UNCONFIGURED_REGION` | Add an `eventProcessor.targets` entry for the region |
 | Systems stay **Processing** and then fail | No regional service answers on that region's request address |
-| A customer sees no systems | The systems are not registered for the tenant in the Registry, or their type is not `SYSTEM` or `SUBACCOUNT` |
+| A customer sees no systems | The systems are not registered for the tenant in the Registry, or their type is not `system` or `subaccount` |
 | An upgrade hangs | The schema migration job is failing or still running. Check its logs |
 | An upgrade fails with `field is immutable` on a ConfigMap | Immutable ConfigMaps from chart 0.1.x, or `config.isImmutable: true`. Delete the ConfigMaps and keep `config.isImmutable: false`; see the chart README |
 
 The [CMK configuration reference](/components/cmk/security/cmk-config#troubleshooting)
 lists further startup errors.
+
+## Other services
+
+| Service | What to know |
+| --- | --- |
+| Session Manager | A Helm hook Job, `session-manager-migrate`, migrates its database before every install and upgrade; its log is kept for five minutes. Run exactly one housekeeper. See the [configuration reference](/components/cmk/security/session-manager-config#troubleshooting) |
+| ExtAuthZ | Reads its policies, trusted subjects and signing keys only at startup: restart it after every change with `kubectl -n envoy-gateway-system rollout restart deployment/extauthz` |
+| Registry | Connects to every broker target at startup and does not start if one cannot be reached. See the [configuration reference](/components/cmk/security/registry-config#troubleshooting) |
+| Checker | One `/healthz` for the whole region; see [Checker](/components/cmk/checker) |
+
+To rotate the shared CSRF secret, follow
+[Rotate the secret](/components/cmk/security/configuration#rotate-the-secret); to
+rotate the client data signing key, follow the
+[rotation procedure](/components/cmk/security/client-data#key-rotation).
 
 ## See also
 

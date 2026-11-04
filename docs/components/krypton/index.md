@@ -1,80 +1,61 @@
 # Krypton
 
 Krypton is one of the two OpenKCM components. It creates and operates
-cryptographic keys: it generates key hierarchies for tenants, protects each key
-with its parent key, stores the protected key material, and provides keys to
-authorized workloads.
+cryptographic keys: it manages key hierarchies for tenants, protects each key
+with its parent key, stores the protected key material in a vault, and provides
+keys to authorized workloads. A root node holds the top of every hierarchy, and
+agents can take over the lower levels close to the workloads.
 
 Repository: [openkcm/krypton](https://github.com/openkcm/krypton)
 
-::: warning Pre-production
+::: danger Sandbox
 Krypton is under active development and not intended for production use yet.
-This page gives an overview; detailed documentation will follow.
+These pages describe the `main` branch, which becomes the next release.
+Release v0.1.0 uses an older configuration format and agent protocol: run the
+root node and the agents from the same release.
 :::
 
-## Concepts
+## What works today
 
-| Concept | Description |
+| Capability | Status |
 | --- | --- |
-| Tenant | Owner of a set of keys. Key material is kept separate per tenant |
-| Key hierarchy | Configurable chain of key levels, called key kinds. Each kind has a role and an algorithm |
-| Key | A key of one kind, with versions. Every key except a root key has a parent key |
-| Sealing | The key material of each key is encrypted with its parent key before it is stored |
-| Vault | Storage for sealed key material: OpenBao, with one namespace per tenant, or SQLite for development |
-
-The example configuration uses four levels:
-
-| Kind | Role | Purpose |
-| --- | --- | --- |
-| `K0` | `root` | Tenant root key |
-| `K1` | `kek` | Key encryption key |
-| `K2` | `tek` | Tenant encryption key |
-| `K3` | `dek` | Data encryption key |
+| Tenants: create, read and list | Available |
+| Key hierarchies and topologies, defined in the root node's configuration | Available |
+| Announce keys on the root node and on agents | Available: the root node records the key and sends it to the agent that manages it |
+| Read keys, their parents and their descendants; list keys with filters | Available |
+| Agents: registration, heartbeats and deregistration | Available |
+| Activate keys | Accepted by the API, but not processed yet: the key stays in the state `active`, status `pending` |
+| Key versions and key material | Not created yet: they follow from the activation |
+| KMIP `Get` and `GetAttributes` | Available for active keys with key material |
+| Suspend, deactivate, destroy and rotate keys | Not implemented |
+| Parent keys held by another node (agents sealing with the root's key) | Not implemented |
 
 ## Components
 
 | Component | Purpose |
 | --- | --- |
-| Root server | Owns the key hierarchy and key material, and serves the administration and KMIP APIs |
-| Agent | Registers with the root server and receives tenant and key metadata from it |
-| CLI | Command-line client for the root server |
+| Root node | Holds the configuration of the hierarchy and the topology, the top kinds of every key hierarchy, and the key metadata of all tenants. Serves the gRPC APIs and, optionally, KMIP |
+| Agent | Takes over the lower kinds of a hierarchy for a part of the topology, for example a region or cloud. Registers with the root node and receives the tenants and keys it manages |
+| `kr` CLI | Command-line client for the root node's gRPC APIs |
 | [Krypton operator](https://github.com/openkcm/krypton-operator) | Experimental. Installs Krypton into remote edge clusters |
 
-Key metadata is stored in PostgreSQL.
+The root node and every agent keep their key metadata in their own PostgreSQL
+database, and the key material in a vault: OpenBao, or SQLite for development.
 
-## Interfaces
+## Find your way
 
-| API | Purpose |
+| You want to | Read |
 | --- | --- |
-| `TenantService` (gRPC) | Create, get and list tenants |
-| `KeyService` (gRPC) | Announce, activate, get and list keys, and walk the hierarchy |
-| `ActionService` (gRPC) | Status of asynchronous actions |
-| Agent `Service` (gRPC) | Register agents and receive their heartbeats |
-| KMIP (optional) | `Get` and `GetAttributes` for workloads |
-
-## Security basics
-
-- Configure the `auth` section of the root server in every environment. It
-  enables mutual TLS (TLS 1.3) and an allowlist of client identities for the
-  gRPC API. Without it, the gRPC API accepts connections without TLS or
-  authentication.
-- The KMIP server requires mutual TLS. A client certificate's common name must
-  equal the tenant ID of the keys it requests.
-- Krypton keeps key material in locked memory and disables core dumps.
-
-## Current limitations
-
-- Key versions are modelled, but key rotation is not implemented yet.
-- The connection between CMK's customer keys and Krypton's root keys is not
-  implemented yet.
-
-## Deployment and development
-
-- The root server ships as the Helm chart `krypton-root` in the repository's
-  `charts/root` directory.
-- `make dev` in the repository starts PostgreSQL and a local Krypton server.
-- Building Krypton requires the Go experiment `runtimesecret`
-  (`GOEXPERIMENT=runtimesecret`).
+| Understand key hierarchies, kinds, segments and key bindings | [Concepts](/components/krypton/concepts) |
+| See how the root node, agents, databases and vaults work together | [Architecture](/components/krypton/architecture) |
+| Know the states of a key and what changes them | [Key lifecycle](/components/krypton/key-lifecycle) |
+| Run Krypton on your machine and try it with the CLI | [Getting started](/components/krypton/getting-started) |
+| Manage tenants and keys | [The kr CLI](/components/krypton/cli) and the [gRPC API](/components/krypton/api) |
+| Workloads | [Use keys in a workload](/components/krypton/workloads), and [KMIP](/components/krypton/kmip) for the server |
+| Install the root node in Kubernetes | [Install the root node](/components/krypton/install) |
+| Run agents | [Agents](/components/krypton/agents) |
+| Secure a deployment | [Security](/components/krypton/security) |
+| Look up a configuration key | [Configuration reference](/components/krypton/configuration) |
 
 ## Using Krypton with CMK
 

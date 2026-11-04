@@ -121,8 +121,8 @@ CMK verifies the signature with the public key of the same name
 
 Every setting, with defaults, examples and troubleshooting, is described in the
 [ExtAuthZ configuration reference](/components/cmk/security/extauthz-config). The
-[configuration guide](/components/cmk/security/configuration) shows how ExtAuthZ is
-set up together with Session Manager, CMK and Envoy Gateway.
+guide to [install a regional deployment](/components/cmk/security/configuration) shows
+how ExtAuthZ is set up together with Session Manager, CMK and Envoy Gateway.
 
 ## Deployment
 

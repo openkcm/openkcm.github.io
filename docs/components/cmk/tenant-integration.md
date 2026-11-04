@@ -1,9 +1,11 @@
 # Connect a regional tenant
 
 This guide is for the platform team and the tooling that onboards its
-customers. It explains how to register a tenant in the central Registry so that
-the CMK of its region serves it, how to connect the tenant's identity provider
-and systems, and how to change its limits, block it or terminate it.
+customers. It explains how to onboard a tenant so that the CMK of its region
+serves it: through the central CMK-2-Krypton Bridge, which also creates the
+tenant's keys in Krypton, or directly in the Registry when you run CMK without
+Krypton. It then covers the tenant's identity provider and systems, and how to
+change its limits, block it or terminate it.
 
 ## How it works
 
@@ -21,14 +23,34 @@ records CMK's result. See
 [Deployment planning](/components/cmk/deployment#what-you-deploy) for the
 central and regional deployments.
 
+How the tenant reaches the Registry depends on whether you use Krypton:
+
+| Deployment | Your onboarding tooling calls | Who registers the tenant in the Registry |
+| --- | --- | --- |
+| With [Krypton](/components/krypton/) <Badge type="danger" text="Sandbox" /> | The [CMK-2-Krypton Bridge](/components/cmk/krypton-bridge): `EnsureKeyHierarchy` | The Bridge, after it has created the tenant and its key chain in Krypton. It also registers the service as a system of the tenant |
+| Without Krypton | The Registry: `RegisterTenant` | Your onboarding tooling |
+
+Everything after the registration is the same in both cases: you connect the
+identity provider, change limits, and block or terminate the tenant through the
+Registry.
+
 ```mermaid
 sequenceDiagram
     participant Tool as Onboarding tooling
+    participant BR as CMK-2-Krypton Bridge (central)
+    participant KR as Krypton
     participant Reg as Registry (central)
     participant CMK as CMK tenant manager (region emea)
     participant SM as Session Manager (region emea)
-    participant Svc as Your cloud service
-    Tool->>Reg: RegisterTenant (region emea)
+    alt With Krypton
+        Tool->>BR: EnsureKeyHierarchy(acme, payments, L4)
+        BR-->>Tool: Job ID
+        BR->>KR: Create the tenant and its key chain
+        BR->>Reg: RegisterTenant (region emea)
+        BR->>Reg: RegisterSystem (payments, tenant acme)
+    else Without Krypton
+        Tool->>Reg: RegisterTenant (region emea)
+    end
     Note over Reg: Tenant PROVISIONING
     Reg->>CMK: Provision job (AMQP)
     Note over CMK: Create tenant, schema and groups
@@ -40,8 +62,6 @@ sequenceDiagram
     CMK->>SM: Apply trust record
     CMK-->>Reg: Done
     Note over Reg: Auth APPLIED
-    Svc->>Reg: RegisterSystem, MapSystemToTenant
-    Note over Reg: Systems visible in the tenant's CMK
 ```
 
 The Registry routes every job by the tenant's **region**: it sends the job to
@@ -52,14 +72,32 @@ regional deployment receives the tenant.
 
 | Step | Call | Who calls it |
 | --- | --- | --- |
-| [1. Register the tenant](#step-1-register-the-tenant) | `RegisterTenant` | Your onboarding tooling |
+| [1. Onboard the tenant](#step-1-onboard-the-tenant) | `EnsureKeyHierarchy` on the Bridge, with Krypton; `RegisterTenant` on the Registry, without Krypton | Your onboarding tooling |
 | [2. Connect its identity provider](#step-2-connect-the-identity-provider) | `ApplyAuth` | Your onboarding tooling |
 | [3. Give the first administrator access](#step-3-give-the-first-administrator-access) | Group membership in the identity provider | The customer |
-| [4. Map its systems](#step-4-map-the-tenant-s-systems) | `RegisterSystem`, `MapSystemToTenant` | Your cloud services, see [Connect a regional system](/components/cmk/system-integration) |
+| [4. Map its systems](#step-4-map-the-tenant-s-systems) | `RegisterSystem`, `MapSystemToTenant` | The Bridge for the services it creates keys for; your cloud services for the others, see [Connect a regional system](/components/cmk/system-integration) |
 | [5. Change its limits](#step-5-optional-change-the-tenant-limits) | `UpdateTenantConfig` | Your onboarding tooling, optional |
 | [Block, unblock, terminate](#block-unblock-and-terminate) | `BlockTenant`, `UnblockTenant`, `TerminateTenant` | Your onboarding tooling |
 
-## The Registry API
+## The APIs
+
+### The CMK-2-Krypton Bridge API
+
+The Bridge offers gRPC on port 9092. Its service
+`kms.api.krypton.rpc.v1.CmkKryptonBridgeService` is defined in
+`proto/kms/api/krypton/rpc/v1/proxy_service.proto` of
+[cmk-krypton-bridge](https://github.com/openkcm/cmk-krypton-bridge):
+
+| Method | Purpose |
+| --- | --- |
+| `EnsureKeyHierarchy` | Create the tenant and the keys of a service in Krypton, as a job, and register them in the Registry |
+| `GetJobStatus` | The status of a job: accepted, processing, retrying, done or failed |
+| `GetKey`, `ListKeys` | The keys of a tenant in Krypton |
+| `Health` | The Bridge's health and its connection to Krypton |
+
+The `cmk2kryptonctl` CLI calls these methods; the examples below use it.
+
+### The Registry API
 
 The Registry offers gRPC only, on port 9092. Its services, defined in
 [api-sdk](https://github.com/openkcm/api-sdk) under
@@ -73,16 +111,105 @@ The Registry offers gRPC only, on port 9092. Its services, defined in
 | `kms.api.cmk.registry.system.v1.Service` | `RegisterSystem`, `ListSystems`, `DeleteSystem`, `UpdateSystemStatus`, `UpdateSystemL1KeyClaim`, `SetSystemLabels`, `RemoveSystemLabels` |
 | `kms.api.cmk.registry.mapping.v1.Service` | `MapSystemToTenant`, `UnmapSystemFromTenant`, `Get` |
 
-The Registry does not authenticate its callers, and these calls create, block
-and terminate tenants. Allow only your onboarding tooling, your cloud services
-and the regional CMK deployments to reach it, with network policies and mutual
-TLS or a service mesh; see the [hardening checklist](/components/cmk/security/hardening).
+These calls create, block and terminate tenants, and so does the Bridge's
+`EnsureKeyHierarchy`. Allow only your onboarding tooling to reach the Bridge's
+gRPC API, and only your onboarding tooling, your cloud services, the regional
+CMK deployments and the CMK-2-Krypton Bridge to reach the Registry, with network policies and a service
+mesh with mutual TLS; see the [hardening checklist](/components/cmk/security/hardening#internal-network).
 
-The examples below use `grpcurl` from a pod that may reach the Registry. If
-gRPC reflection is disabled, which is the chart default, pass the proto files
-from api-sdk with `-import-path` and `-proto`.
+The examples below use `grpcurl` from a pod that may reach the Registry. The
+Registry chart disables gRPC reflection, so add the proto files of
+[api-sdk](https://github.com/openkcm/api-sdk), in the version that the Registry
+uses, to every command:
 
-## Step 1: Register the tenant
+```bash
+git clone --depth 1 --branch v0.23.0 https://github.com/openkcm/api-sdk
+grpcurl -plaintext -import-path api-sdk/proto -import-path api-sdk/vendor-proto \
+  -proto kms/api/cmk/registry/tenant/v1/tenant.proto \
+  -d '{"id":"acme"}' registry.services.svc.cluster.local:9092 \
+  kms.api.cmk.registry.tenant.v1.Service/GetTenant
+```
+
+Each service has its own proto file, for example `auth/v1/auth.proto` for
+`ApplyAuth`. The examples below leave these options out for brevity.
+
+## Step 1: Onboard the tenant
+
+### With Krypton: through the CMK-2-Krypton Bridge
+
+Ask the Bridge for the key chain of the tenant's first service:
+
+```bash
+cmk2kryptonctl --addr=cmk-krypton-bridge.services.svc.cluster.local:9092 \
+  ensure-hierarchy --tenant-id=acme --service-id=payments --level=L4
+```
+
+| Field | Rules |
+| --- | --- |
+| `tenant_id` | The tenant ID in Krypton and in the Registry. Follow the Registry's rules for tenant IDs, see [below](#without-krypton-directly-in-the-registry): lowercase letters, digits and hyphens, at most 40 characters |
+| `service_id` | The service, for example `payments`. The Bridge registers it as a system of the tenant, with this ID as its external ID. Always set it when you onboard a tenant |
+| `target_level` | `L2`, `L3` or `L4`: the level down to which the Bridge creates keys. See [Key hierarchy](/components/cmk/krypton-bridge#key-hierarchy) |
+
+The Bridge returns a job ID at once and runs the job in the background. Follow
+it until it is done:
+
+```bash
+cmk2kryptonctl --addr=cmk-krypton-bridge.services.svc.cluster.local:9092 \
+  watch-job --job-id=<job ID>
+```
+
+What happens next:
+
+1. The Bridge creates the tenant in Krypton, the first time only, and then every
+   missing key of the chain down to the requested level. A failed attempt is
+   retried, up to `config.worker.maxAttempts` times.
+1. When the job is done, the Bridge registers the tenant in the Registry. A
+   tenant that the Registry already knows is left as it is.
+1. It registers the service as a system of the tenant, which maps the system to
+   the tenant.
+1. From here on, the Registry provisions the tenant in CMK as described below
+   for the registration without Krypton: status `STATUS_PROVISIONING`, then
+   `STATUS_ACTIVE`.
+
+The Bridge fills the Registry's fields from the request and from its own
+configuration ([`config.registry`](/components/cmk/krypton-bridge#configuration)):
+
+| Registry field | Value |
+| --- | --- |
+| Tenant `id` and `name` | The request's `tenant_id` |
+| Tenant `region` | `config.registry.region` |
+| Tenant `owner_id`, `owner_type` | `config.registry.ownerId`, `config.registry.ownerType` |
+| Tenant `role` | `config.registry.role`; `ROLE_TRIAL` when it is not set |
+| System `external_id`, `type` | The request's `service_id`, `config.registry.systemType` |
+| System `region` | `config.registry.region` |
+| System `l2_key_id` | The ID of the key that the job created at the requested level |
+
+::: tip Name, owner and role of your own
+To give a tenant a name, owner or role other than the Bridge's, register it in
+the Registry first, as [without Krypton](#without-krypton-directly-in-the-registry),
+then call the Bridge: it keeps the tenant that the Registry already knows.
+:::
+
+The Bridge uses `config.registry.region` for both the tenant and the system, so
+that value is the tenant's CMK region and the system's region at the same time:
+
+- The Registry needs an [`orbital.targets`](/components/cmk/security/registry-config#targets)
+  entry with this region, for the CMK that serves the tenant.
+- That CMK needs an [`eventProcessor.targets`](/components/cmk/security/cmk-config#eventprocessor)
+  entry with this region, with the Bridge's queues, so that the key and system
+  tasks of these systems reach the Bridge.
+- Today all tenants that one Bridge instance registers get the same CMK region,
+  owner and role. See the Bridge's
+  [current state](/components/cmk/krypton-bridge#current-state).
+
+The registration in the Registry runs once, after the job is done. If it
+fails, for example because the Registry cannot be reached or a validation rule
+refuses a value, the job still reports `JOB_STATUS_DONE` and the Bridge logs the
+error. Check the tenant with `GetTenant`, as shown below. Repeating the same
+`ensure-hierarchy` request is safe: the keys exist already, and the Bridge tries
+the registration again.
+
+### Without Krypton: directly in the Registry
 
 ```bash
 grpcurl -plaintext -d @ registry.services.svc.cluster.local:9092 \
@@ -134,7 +261,7 @@ grpcurl -plaintext -d '{"id":"acme"}' registry.services.svc.cluster.local:9092 \
 ```
 
 ::: warning Tenant IDs with `.`, `_` or `~`
-The Registry accepts them, but the CMK group names built from them, such as
+The Registry accepts them, also from the Bridge, but the CMK group names built from them, such as
 `KMS_TenantAdministrator_acme.eu`, do not match the Registry chart's default
 `Tenant.UserGroups` rule (`^KMS_(TenantAdministrator|TenantAuditor)_[A-Za-z0-9-]+$`).
 CMK then retries `SetTenantUserGroups` without end, and the tenant stays in
@@ -184,7 +311,7 @@ or to `AUTH_STATUS_APPLYING_ERROR` with an `error_message`. Check it with
   sign in until you apply an auth again.
 - Calling `ApplyAuth` again with the same `external_id` updates the record.
 - The properties are described in the
-  [configuration guide](/components/cmk/security/configuration#step-8-onboard-a-tenant).
+  [regional installation guide](/components/cmk/security/configuration#step-8-onboard-a-tenant).
 
 ## Step 3: Give the first administrator access
 
@@ -203,8 +330,10 @@ see [Sign-in, groups and roles](/components/cmk/guide/access).
 ## Step 4: Map the tenant's systems
 
 A tenant sees in CMK only the systems that are mapped to it in the Registry.
-Your cloud services register their systems and map them, as described in
-[Connect a regional system](/components/cmk/system-integration):
+With Krypton, the Bridge registers and maps the system of every service it
+creates keys for: call `EnsureKeyHierarchy` for each further service of the
+tenant. Your cloud services register and map their other systems, as described
+in [Connect a regional system](/components/cmk/system-integration):
 
 - `MapSystemToTenant` requires the tenant to be active, and the system to be
   available, not mapped to another tenant and without an L1 key claim.
@@ -304,6 +433,8 @@ registered for it:
 | Registry | [`validations`](/components/cmk/security/registry-config#validations) | A `Tenant.Region` rule with the CMK regions, and a `Tenant.ID` rule for lowercase IDs |
 | CMK of the region | [`tenantManager.amqp`](/components/cmk/security/cmk-config#tenantmanager) | `source` equal to the target's request queue, `target` equal to its reply queue |
 | CMK of the region | `services.registry`, `services.sessionManager` | The central Registry and the region's Session Manager |
+| CMK-2-Krypton Bridge, with Krypton | [`config.registry`](/components/cmk/krypton-bridge#configuration) | `region` equal to the CMK region of the tenants it onboards; `ownerId`, `ownerType`, `role` and `systemType` for the tenants and systems it registers |
+| CMK of the region, with Krypton | [`eventProcessor.targets`](/components/cmk/security/cmk-config#eventprocessor) | An entry with the Bridge's `config.registry.region` and the Bridge's queues |
 
 CMK does not check a tenant's region: whichever CMK reads a target's request
 queue serves the tenants of that region.
@@ -318,6 +449,8 @@ queue serves the tenants of that region.
 - [ ] The tenant's CMK region has a Registry target, and that region's CMK reads
   its queues.
 - [ ] The tenant ID uses lowercase letters, digits and hyphens only.
+- [ ] With Krypton: the Bridge's job is `JOB_STATUS_DONE`, and `GetTenant` in the
+  Registry finds the tenant.
 - [ ] The tenant is `STATUS_ACTIVE` before you apply its identity provider.
 - [ ] One auth per tenant, with the identity provider's exact `issuer`, is
   `AUTH_STATUS_APPLIED`.
@@ -332,7 +465,9 @@ queue serves the tenants of that region.
 | Symptom | Cause and fix |
 | --- | --- |
 | `RegisterTenant` fails with `invalid tenant: validation failed for <field>` | A required field is empty, or a value breaks a `validations` rule |
-| Tenant stays in `STATUS_PROVISIONING` | The CMK tenant manager of the region is not running, or its `tenantManager.amqp` queues do not match the Registry target. With an ID containing `.`, `_` or `~`, see the warning in [Step 1](#step-1-register-the-tenant) |
+| Bridge job `JOB_STATUS_FAILED` | Read the job's `error`. Usually Krypton cannot be reached, or the request is incomplete: `service_id` is required for `L3` and `L4` |
+| Bridge job done, but `GetTenant` finds no tenant | The registration in the Registry failed; the Bridge's log names the cause. Fix it, for example `config.registry` or a `validations` rule, and repeat the request |
+| Tenant stays in `STATUS_PROVISIONING` | The CMK tenant manager of the region is not running, or its `tenantManager.amqp` queues do not match the Registry target. With an ID containing `.`, `_` or `~`, see the warning in [Step 1](#without-krypton-directly-in-the-registry) |
 | Tenant in `STATUS_PROVISIONING_ERROR` | Check the job error. `no matching orbital target manager found for region`: the region has no Registry target |
 | `ApplyAuth` fails: tenant not active | Wait until provisioning has finished |
 | Auth in `AUTH_STATUS_APPLYING_ERROR` | Read `error_message`. Usually the `issuer` property is missing, or Session Manager of the region is not reachable from CMK |

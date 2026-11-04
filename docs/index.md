@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: "OpenKCM"
-  text: "Customer-controlled key chain management for services"
-  tagline: "Open-source key management that lets the customers of a cloud service own the keys that protect their data at rest and in transit, share one key across many services, decide who may use it, and withdraw it from all of them at any time."
+  text: "Key Chain Management for cloud services"
+  tagline: "Cloud customers stay in control of their data: they bring their own key or keep it in their own keystore, decide who may manage it, and withdraw it from every service and region at once. Krypton, the key engine, creates the key hierarchies that protect the data and delivers keys to workloads."
   image:
     src: https://raw.githubusercontent.com/openkcm/openkcm.github.io/refs/heads/main/docs/assets/official_logo.svg
     alt: OpenKCM
@@ -14,11 +14,11 @@ hero:
       text: What is OpenKCM?
       link: /overview/
     - theme: alt
-      text: Manage your keys
-      link: /components/cmk/guide/
+      text: Customer keys
+      link: /components/cmk/
     - theme: alt
-      text: Deploy CMK
-      link: /components/cmk/deployment
+      text: Crypto
+      link: /components/krypton/
     - theme: alt
       text: GitHub
       link: https://github.com/openkcm
@@ -37,7 +37,7 @@ features:
     link: /components/cmk/system-integration
     linkText: Connect a system
   - title: 🧱 Krypton
-    details: Creates and operates cryptographic key hierarchies and delivers keys to workloads over KMIP. Used by CMK, and usable on its own. In pre-production.
+    details: Creates and operates cryptographic key hierarchies and delivers keys to workloads over KMIP. Used by CMK, and usable on its own. <span class="VPBadge danger">Sandbox</span>
     link: /overview/krypton
     linkText: About Krypton
   - title: 🔌 Pluggable
@@ -54,10 +54,11 @@ features:
 
 | You are… | Start here | Then |
 | --- | --- | --- |
-| **Evaluating OpenKCM** for your platform | [Overview](/overview/) | [Core concepts](/overview/core-concept), [Trust model](/overview/trust-model) |
+| **Evaluating OpenKCM** for your platform | [Overview](/overview/) | [Core concepts](/overview/core-concept), [Trust model](/overview/trust-model), [OpenKCM vs. KMS offerings](/overview/openkcm-vs-kms) |
 | **A customer** who manages keys in CMK: tenant administrator, key administrator or auditor | [Manage your keys](/components/cmk/guide/) | [Keys](/components/cmk/guide/keys), [Approvals](/components/cmk/guide/approvals) |
-| **Building a cloud service** that encrypts data with customer keys | [Connect a regional system](/components/cmk/system-integration) | [CMK API](/components/cmk/api), [Krypton](/components/krypton/) |
-| **Operating the platform** that runs CMK | [Deployment planning](/components/cmk/deployment) | [Configuration guide](/components/cmk/security/configuration), [Connect a regional tenant](/components/cmk/tenant-integration), [Operations](/components/cmk/operations) |
+| **Building a cloud service** that encrypts data with customer keys | [Connect a regional system](/components/cmk/system-integration) | [CMK API](/components/cmk/api), [Use keys in a workload](/components/krypton/workloads) |
+| **Operating the platform** that runs CMK | [Deployment planning](/components/cmk/deployment) | [Install the Registry](/components/cmk/install-registry), [Install a regional deployment](/components/cmk/security/configuration), [Connect a regional tenant](/components/cmk/tenant-integration), [Operations](/components/cmk/operations) |
 | **Contributing** to OpenKCM | [Contributing](/contribute/contributing) | [Releases](/releases/), [Roadmap](/roadmap/) |
+| **Looking for help**, or reporting a problem or a vulnerability | [Community and support](/community/) | [Releases](/releases/) |
 
 New to the terms? The [glossary](/overview/glossary) explains them all.

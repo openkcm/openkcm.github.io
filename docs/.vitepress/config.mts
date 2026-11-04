@@ -7,6 +7,7 @@ const resourcesSidebar = [
     items: [
       {text: 'Roadmap', link: '/roadmap/'},
       {text: 'Releases', link: '/releases/'},
+      {text: 'Community and support', link: '/community/'},
       {text: 'Contributing', link: '/contribute/contributing'},
       {text: 'Documentation style guide', link: '/contribute/style-guide'},
     ]
@@ -16,7 +17,7 @@ const resourcesSidebar = [
 // https://vitepress.dev/reference/site-config
 export default withMermaid({
   title: "OpenKCM",
-  description: "OpenKCM documentation: customer-controlled key chain management for services",
+  description: "OpenKCM: open-source Key Chain Management for cloud services",
   base: '/',
   // The SaaS section is unfinished placeholder content; keep it out of the
   // published site and the search index until it is written.
@@ -48,6 +49,7 @@ export default withMermaid({
     nav: [
       {text: 'Home', link: '/'},
       {text: 'Overview', link: '/overview/', activeMatch: '^/overview/'},
+      {text: 'Architecture', link: '/architecture/', activeMatch: '^/architecture/'},
       {
         text: 'Components',
         activeMatch: '^/components/',
@@ -58,10 +60,11 @@ export default withMermaid({
       },
       {
         text: 'Resources',
-        activeMatch: '^/(roadmap|releases|contribute)/',
+        activeMatch: '^/(roadmap|releases|community|contribute)/',
         items: [
           {text: 'Roadmap', link: '/roadmap/'},
           {text: 'Releases', link: '/releases/'},
+          {text: 'Community and support', link: '/community/'},
           {text: 'Contributing', link: '/contribute/contributing'},
           {text: 'Documentation style guide', link: '/contribute/style-guide'},
         ]
@@ -116,7 +119,8 @@ export default withMermaid({
           text: 'Deploy and operate',
           items: [
             {text: 'Deployment planning', link: '/components/cmk/deployment'},
-            {text: 'Configuration guide', link: '/components/cmk/security/configuration'},
+            {text: 'Install the Registry', link: '/components/cmk/install-registry'},
+            {text: 'Install a regional deployment', link: '/components/cmk/security/configuration'},
             {text: 'Request walkthrough', link: '/components/cmk/security/walkthrough'},
             {text: 'Operations', link: '/components/cmk/operations'},
             {text: 'Hardening checklist', link: '/components/cmk/security/hardening'},
@@ -141,6 +145,7 @@ export default withMermaid({
             {text: 'ExtAuthZ', link: '/components/cmk/extauthz'},
             {text: 'Session Manager', link: '/components/cmk/session-manager'},
             {text: 'Plugins', link: '/components/cmk/plugins'},
+            {text: 'Checker', link: '/components/cmk/checker'},
           ]
         },
         {
@@ -159,7 +164,59 @@ export default withMermaid({
         {
           text: 'Krypton',
           items: [
-            {text: 'Overview', link: '/components/krypton/'},
+            {text: 'Start here', link: '/components/krypton/'},
+          ]
+        },
+        {
+          text: 'Learn',
+          items: [
+            {text: 'Concepts', link: '/components/krypton/concepts'},
+            {text: 'Architecture', link: '/components/krypton/architecture'},
+            {text: 'Key lifecycle', link: '/components/krypton/key-lifecycle'},
+          ]
+        },
+        {
+          text: 'Use',
+          items: [
+            {text: 'Getting started', link: '/components/krypton/getting-started'},
+            {text: 'The kr CLI', link: '/components/krypton/cli'},
+            {text: 'gRPC API', link: '/components/krypton/api'},
+            {text: 'KMIP', link: '/components/krypton/kmip'},
+            {text: 'Workloads', link: '/components/krypton/workloads'},
+          ]
+        },
+        {
+          text: 'Deploy and operate',
+          items: [
+            {text: 'Install the root node', link: '/components/krypton/install'},
+            {text: 'Agents', link: '/components/krypton/agents'},
+            {text: 'Security', link: '/components/krypton/security'},
+          ]
+        },
+        {
+          text: 'Reference',
+          items: [
+            {text: 'Configuration', link: '/components/krypton/configuration'},
+          ]
+        },
+      ],
+      '/architecture/': [
+        {
+          text: 'Architecture',
+          items: [
+            {text: 'Introduction', link: '/architecture/'},
+            {text: 'Deployment', link: '/architecture/deployment'},
+            {text: 'Main flows', link: '/architecture/flows'},
+            {text: 'Security and integration', link: '/architecture/security-and-integration'},
+          ]
+        },
+        {
+          text: 'Related',
+          items: [
+            {text: 'Trust model', link: '/overview/trust-model'},
+            {text: 'OpenKCM vs. KMS offerings', link: '/overview/openkcm-vs-kms'},
+            {text: 'CMK security architecture', link: '/components/cmk/security/'},
+            {text: 'Krypton architecture', link: '/components/krypton/architecture'},
           ]
         },
       ],
@@ -168,6 +225,7 @@ export default withMermaid({
           text: 'Overview',
           items: [
             {text: 'Introduction', link: '/overview/'},
+            {text: 'OpenKCM vs. KMS offerings', link: '/overview/openkcm-vs-kms'},
             {text: 'Core concepts', link: '/overview/core-concept'},
             {text: 'CMK', link: '/overview/cmk'},
             {text: 'Krypton', link: '/overview/krypton'},
@@ -178,6 +236,7 @@ export default withMermaid({
       ],
       '/roadmap/': resourcesSidebar,
       '/releases/': resourcesSidebar,
+      '/community/': resourcesSidebar,
       '/contribute/': resourcesSidebar,
       // '/saas/': [
       //   {

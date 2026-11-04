@@ -20,6 +20,7 @@ entry links to the page that explains the term in detail.
 | CMK UI | The web console in which tenant users manage their keys, systems, groups and approvals. See [CMK UI](/components/cmk/cmk-ui) |
 | Customer key | The tenant's root key, managed through CMK and kept in a keystore. Level L1 of the key hierarchy |
 | DEK | Data encryption key: a key that encrypts data. Level L4 of the key hierarchy |
+| Domain (System) key | The top key that the provider holds for a tenant in Krypton, protected by the tenant's customer key. It protects the tenant's service keys. Level L2 of the key hierarchy. See [Core concepts](/overview/core-concept#l2-domain-system-key) |
 | Envoy Gateway | The API gateway in front of CMK. It terminates TLS and asks ExtAuthZ to check every request |
 | ExtAuthZ | The service that authenticates every API request at the gateway, evaluates policies and signs the client data. See [ExtAuthZ](/components/cmk/extauthz) |
 
@@ -45,7 +46,7 @@ entry links to the page that explains the term in detail.
 
 | Term | Meaning |
 | --- | --- |
-| L1 to L4 | The levels of the key hierarchy: customer key, tenant key, service key and data encryption key |
+| L1 to L4 | The levels of the key hierarchy: customer key, Domain (System) key, service key and data encryption key |
 | OpenBao | The secrets store in which Krypton keeps sealed key material |
 | Orbital | The library that CMK and the Registry use to send jobs and tasks between services over an AMQP broker, and to track their results |
 | Plugin | A separate process that connects CMK to a keystore or to a user directory. See [Plugins](/components/cmk/plugins) |
@@ -61,6 +62,7 @@ entry links to the page that explains the term in detail.
 | --- | --- |
 | SCIM | System for Cross-domain Identity Management: a standard API for user directories, used by CMK to look up users and groups |
 | Session Manager | The service that runs the browser sign-in with the tenant's identity provider and keeps the browser sessions. See [Session Manager](/components/cmk/session-manager) |
+| Service key | A key encryption key for one of the provider's services, for one tenant. It protects the data encryption keys of that service. Level L3 of the key hierarchy. See [Core concepts](/overview/core-concept#l3-service-key) |
 | System | A service instance of the cloud service in a region that uses a tenant's key, for example a database of that tenant. Registered in the Registry and mapped to a tenant. See [Systems](/components/cmk/guide/systems) |
 | System region | The region where a system runs, for example `eu10`. The CMK of the system's tenant sends the system's tasks to its target for this region |
 | System-managed key | A key that the keystore generates on request. Not available in the current version of CMK; use BYOK or HYOK |
